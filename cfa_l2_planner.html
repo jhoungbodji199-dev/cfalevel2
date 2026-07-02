@@ -309,6 +309,7 @@
   .cal-day.mocks{border-left:3px solid var(--mocks);}
   .cal-day .dnum{font-size:13px; color:var(--text);}
   .cal-day .dhours{font-size:9.5px; color:var(--gold-soft); margin-top:2px;}
+  .cal-day .ddot{width:5px;height:5px;border-radius:50%;position:absolute;top:5px;right:5px;}
   .cal-day.has-log{background:rgba(201,164,92,.08);}
   .cal-day.is-today{box-shadow:0 0 0 2px var(--gold-soft) inset;}
   .cal-legend-row{
@@ -348,7 +349,7 @@
     display:block;font-size:11px;color:var(--text-dim);
     text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
   }
-  .dp-field input, .dp-field textarea{
+  .dp-field input, .dp-field textarea, .dp-field select{
     width:100%;
     background:var(--ink-3);
     border:1px solid var(--line);
@@ -359,7 +360,7 @@
     font-size:13.5px;
     resize:vertical;
   }
-  .dp-field input:focus, .dp-field textarea:focus{outline:none;border-color:var(--gold);}
+  .dp-field input:focus, .dp-field textarea:focus, .dp-field select:focus{outline:none;border-color:var(--gold);}
   .dp-save{
     background:linear-gradient(135deg,var(--gold-soft),var(--gold));
     color:#1a1204;
@@ -453,6 +454,107 @@
   @keyframes pop{ 0%{transform:scale(1);} 45%{transform:scale(1.35);} 100%{transform:scale(1);} }
 
   .topics{margin-top:44px;}
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:8px;margin-bottom:32px;
+    border-bottom:1px solid var(--line);
+  }
+  .tab-btn{
+    padding:10px 4px;
+    margin-right:22px;
+    font-size:14px;
+    color:var(--text-dim);
+    cursor:pointer;
+    position:relative;
+    transition:color .15s;
+  }
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--gold-soft);}
+  .tab-btn.active::after{
+    content:'';
+    position:absolute;left:0;right:0;bottom:-1px;height:2px;
+    background:linear-gradient(90deg,var(--gold-soft),var(--gold));
+    border-radius:2px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Stats page */
+  .stats-summary-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+    margin-bottom:34px;
+  }
+  .ss-card{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .ss-num{font-family:'IBM Plex Mono',monospace; font-size:22px; color:var(--gold-soft);}
+  .ss-num.behind{color:#f4736a;}
+  .ss-num.ahead{color:var(--done);}
+  .ss-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+
+  .domaine-card{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--ink-2);
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .domaine-head{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 18px;
+    cursor:pointer;
+  }
+  .domaine-sw{width:10px;height:10px;border-radius:50%;flex:none;}
+  .domaine-name{flex:1;font-size:14.5px;}
+  .domaine-hours{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--text-dim);
+    white-space:nowrap;
+  }
+  .domaine-hours b{color:var(--gold-soft);font-weight:600;}
+  .domaine-bar-track{
+    height:5px;background:var(--ink-3);border-radius:3px;overflow:hidden;
+    margin:0 18px 12px 18px;
+  }
+  .domaine-bar-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+  .domaine-status{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    padding:2px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .domaine-status.ok{background:rgba(111,156,124,.18);color:var(--done);}
+  .domaine-status.ontime{background:rgba(201,164,92,.16);color:var(--gold-soft);}
+  .domaine-status.behind{background:rgba(244,115,106,.15);color:#f4736a;}
+  .stats-legend{
+    display:flex;gap:22px;flex-wrap:wrap;
+    font-size:11.5px;color:var(--text-faint);
+    margin-bottom:16px;
+  }
+  .domaine-sub{
+    border-top:1px solid var(--line);
+    max-height:0;overflow:hidden;
+    transition:max-height .35s ease;
+  }
+  .domaine-sub.open{max-height:600px;}
+  .sub-row{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 18px;
+    font-size:13px;color:var(--text-dim);
+    border-bottom:1px solid rgba(255,255,255,0.03);
+  }
+  .sub-row:last-child{border-bottom:none;}
+  .sub-row .sr-name{flex:1;}
+  .sub-row .sr-done{color:var(--done);font-size:12px;cursor:pointer;transition:transform .15s;}
+  .sub-row .sr-done:hover{transform:scale(1.25);}
+  .sub-row .sr-hours{font-family:'IBM Plex Mono',monospace;color:var(--gold-soft);font-size:12px;}
+  .general-note{
+    font-size:12px;color:var(--text-faint);
+    margin-top:16px;
+  }
   .topic{
     border:1px solid var(--line);
     border-radius:8px;
@@ -593,6 +695,13 @@
     <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   </header>
 
+  <div class="tabs">
+    <div class="tab-btn active" id="tabRoute">Feuille de route</div>
+    <div class="tab-btn" id="tabStats">Stats &amp; Récap</div>
+  </div>
+
+  <div id="viewRoute" class="view active">
+
   <div class="section-title">Répartition de l'examen</div>
   <div class="section-sub">88 questions scorées, réparties selon la pondération officielle 2026 — survole ou clique un thème</div>
   <div class="donut-section">
@@ -608,7 +717,7 @@
   <div id="donutTooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
 
   <div class="section-title">Calendrier</div>
-  <div class="section-sub">Clique un jour pour enregistrer le temps passé et les sujets travaillés ce jour-là</div>
+  <div class="section-sub">Clique un jour pour enregistrer le temps passé et le sujet travaillé ce jour-là</div>
   <div class="cal-wrap">
     <div class="cal-header">
       <div class="cal-nav" id="calPrev">‹</div>
@@ -634,8 +743,8 @@
         <input type="number" id="dayHours" min="0" step="0.5" placeholder="0">
       </div>
       <div class="dp-field">
-        <label>Sujet(s) / notes</label>
-        <textarea id="dayTopics" rows="2" placeholder="ex: Fixed Income - arbitrage-free valuation, vignettes 1-4"></textarea>
+        <label>Domaine / sous-domaine travaillé</label>
+        <select id="daySubject"></select>
       </div>
       <button class="dp-save" id="daySave">Enregistrer</button>
       <span class="dp-saved-msg" id="daySavedMsg">enregistré ✓</span>
@@ -656,13 +765,22 @@
   </div>
 
   <div class="section-title">Semaines</div>
-  <div class="section-sub">Entre les heures loguées et l'objectif de la semaine — coche quand c'est bouclé</div>
+  <div class="section-sub">Heures loguées (calculées depuis le calendrier) — coche quand la semaine est bouclée</div>
   <div id="weeksList"></div>
 
   <div class="topics">
     <div class="section-title">Learning Modules par thème</div>
     <div class="section-sub">45 LM au total — cf. 2026 Level II Topic Outlines</div>
     <div id="topicsList"></div>
+  </div>
+
+  </div>
+
+  <div id="viewStats" class="view">
+    <div class="section-title">Prévisionnel vs réel</div>
+    <div class="section-sub">Basé sur les heures enregistrées jour par jour dans le calendrier, sommées par sous-domaine puis par domaine</div>
+    <div id="statsSummary"></div>
+    <div id="statsDomaines"></div>
   </div>
 
   <footer>
@@ -915,6 +1033,96 @@ const TOPICS = [
 const TOTAL_TARGET = WEEKS.reduce((a,w)=>a+w.target,0);
 const TOTAL_LM = TOPICS.reduce((a,t)=>a+t.lms.length,0);
 const EXAM_DATE = new Date('2026-11-18T00:00:00');
+
+/* Objectif "prevu" par domaine = heures de contenu dediees (phase contenu),
+   + pour Ethics la semaine 15 (dediee entierement a Ethics en phase mocks).
+   Les semaines 16-19 (mocks/revue transverse) melangent tous les domaines
+   et ne sont donc pas ventilees par domaine, elles comptent seulement dans
+   le total global (402h). */
+const PLANNED_BY_TOPIC = {
+  qm:21, eco:21, fsa:35, ci:21, ei:35, fi:35, der:21, ai:21, pm:35, eth:51
+};
+/* Derniere date du bloc de semaines dedie a chaque domaine dans le planning.
+   Avant cette date, ne pas etre a l'objectif est normal (encore du temps).
+   Apres cette date, un manque d'heures devient un vrai retard. */
+const DOMAINE_DEADLINE = {
+  qm:'2026-07-19', fsa:'2026-08-02', ci:'2026-08-09', ei:'2026-08-23',
+  fi:'2026-09-06', der:'2026-09-27', ai:'2026-09-27', pm:'2026-10-11',
+  eco:'2026-10-18', eth:'2026-10-25'
+};
+const GENERAL_OPTIONS = [
+  {key:'general-mock', label:'Mock complet (session 1+2)'},
+  {key:'general-review', label:'Revision transverse / formules / erreurs'}
+];
+
+function buildSubjectOptions(){
+  let html = '<option value="">-- choisir --</option>';
+  TOPICS.forEach(function(t){
+    html += '<optgroup label="'+t.name+'">';
+    t.lms.forEach(function(lm,i){
+      html += '<option value="'+t.id+'-'+i+'">'+lm+'</option>';
+    });
+    html += '</optgroup>';
+  });
+  html += '<optgroup label="General">';
+  GENERAL_OPTIONS.forEach(function(g){
+    html += '<option value="'+g.key+'">'+g.label+'</option>';
+  });
+  html += '</optgroup>';
+  return html;
+}
+function isGeneralKey(key){
+  return GENERAL_OPTIONS.some(function(g){ return g.key===key; });
+}
+function parseLmKey(key){
+  if(!key || isGeneralKey(key)) return null;
+  const idx = key.lastIndexOf('-');
+  if(idx<0) return null;
+  const topicId = key.slice(0, idx);
+  const lmIndex = Number(key.slice(idx+1));
+  const topic = TOPICS.find(function(t){ return t.id===topicId; });
+  if(!topic || isNaN(lmIndex)) return null;
+  return {topic:topic, lmIndex:lmIndex, lmName: topic.lms[lmIndex]};
+}
+function subjectLabel(key){
+  if(!key) return '';
+  if(isGeneralKey(key)){
+    const g = GENERAL_OPTIONS.find(function(x){ return x.key===key; });
+    return g ? g.label : key;
+  }
+  const parsed = parseLmKey(key);
+  return parsed ? (parsed.topic.name+' - '+parsed.lmName) : key;
+}
+function actualHoursByLm(){
+  const map = {};
+  Object.keys(state.dayLogs).forEach(function(d){
+    const log = state.dayLogs[d];
+    if(!log || !log.lmKey || isGeneralKey(log.lmKey)) return;
+    const parsed = parseLmKey(log.lmKey);
+    if(!parsed) return;
+    const key = parsed.topic.id+'-'+parsed.lmIndex;
+    map[key] = (map[key]||0) + (Number(log.hours)||0);
+  });
+  return map;
+}
+function actualHoursGeneral(){
+  let total = 0;
+  Object.keys(state.dayLogs).forEach(function(d){
+    const log = state.dayLogs[d];
+    if(log && log.lmKey && isGeneralKey(log.lmKey)){ total += Number(log.hours)||0; }
+  });
+  return total;
+}
+function actualHoursByDomaine(topicId){
+  const byLm = actualHoursByLm();
+  let total = 0;
+  const topic = TOPICS.find(function(t){ return t.id===topicId; });
+  if(!topic) return 0;
+  topic.lms.forEach(function(_,i){ total += byLm[topicId+'-'+i] || 0; });
+  return total;
+}
+
+let statsOpenIds = [];
 
 let state = { dayLogs:{}, weekDone:{}, lmChecked:{} };
 let prevStats = {hours:0, lmCount:0, weeksDone:0};
@@ -1230,7 +1438,13 @@ function renderCalendar(){
     if(log && Number(log.hours)>0){ cls += ' has-log'; monthTotal += Number(log.hours); }
     if(iso===today){ cls += ' is-today'; }
     cell.className = cls;
-    cell.innerHTML = '<div class="dnum">'+d+'</div>' + (log && Number(log.hours)>0 ? '<div class="dhours">'+log.hours+'h</div>' : '');
+    let dotHtml = '';
+    if(log && log.lmKey){
+      const parsed = parseLmKey(log.lmKey);
+      if(parsed){ dotHtml = '<span class="ddot" style="background:'+parsed.topic.color+'"></span>'; }
+      else if(isGeneralKey(log.lmKey)){ dotHtml = '<span class="ddot" style="background:var(--text-faint)"></span>'; }
+    }
+    cell.innerHTML = dotHtml + '<div class="dnum">'+d+'</div>' + (log && Number(log.hours)>0 ? '<div class="dhours">'+log.hours+'h</div>' : '');
     if(week){
       cell.addEventListener('click', function(){ openDayPanel(iso); });
     }
@@ -1243,14 +1457,15 @@ function openDayPanel(iso){
   selectedDay = iso;
   const week = getWeekForDate(iso);
   const panel = document.getElementById('dayPanel');
-  const log = state.dayLogs[iso] || {hours:'', topics:''};
+  const log = state.dayLogs[iso] || {hours:'', lmKey:''};
   panel.style.display = 'block';
   const dateObj = new Date(iso+'T00:00:00');
   const fmt = dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
   document.getElementById('dayPanelDate').textContent = fmt.charAt(0).toUpperCase()+fmt.slice(1);
-  document.getElementById('dayPanelContext').textContent = week ? (week.topic+' · phase '+week.phase) : 'Hors periode d\'etude';
+  document.getElementById('dayPanelContext').textContent = week ? ('Prevu cette semaine : '+week.topic+' (phase '+week.phase+')') : 'Hors periode d\'etude';
   document.getElementById('dayHours').value = log.hours || '';
-  document.getElementById('dayTopics').value = log.topics || '';
+  const select = document.getElementById('daySubject');
+  if(select) select.value = log.lmKey || '';
   document.getElementById('daySavedMsg').classList.remove('show');
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -1262,16 +1477,16 @@ function closeDayPanel(){
 function saveDayLog(){
   if(!selectedDay) return;
   const hoursInput = document.getElementById('dayHours');
-  const topicsInput = document.getElementById('dayTopics');
+  const select = document.getElementById('daySubject');
   const hours = Number(hoursInput.value)||0;
-  const topics = topicsInput.value||'';
-  if(hours<=0 && !topics.trim()){
+  const lmKey = select ? select.value : '';
+  if(hours<=0 && !lmKey){
     delete state.dayLogs[selectedDay];
   } else {
-    state.dayLogs[selectedDay] = {hours: hours, topics: topics};
+    state.dayLogs[selectedDay] = {hours: hours, lmKey: lmKey};
   }
   saveState();
-  renderHeader(); renderLedger(); renderWeeks(); renderCalendar();
+  render();
   const msg = document.getElementById('daySavedMsg');
   if(msg){
     msg.classList.add('show');
@@ -1283,6 +1498,8 @@ function initCalendarNav(){
   const next = document.getElementById('calNext');
   const close = document.getElementById('dayPanelClose');
   const save = document.getElementById('daySave');
+  const select = document.getElementById('daySubject');
+  if(select) select.innerHTML = buildSubjectOptions();
   if(prev) prev.addEventListener('click', function(){
     if(calMonthIdx>0){ calMonthIdx--; closeDayPanel(); renderCalendar(); }
   });
@@ -1293,6 +1510,137 @@ function initCalendarNav(){
   if(save) save.addEventListener('click', saveDayLog);
 }
 
+function weekIndexForToday(){
+  const today = todayISO();
+  for(let i=0;i<WEEKS.length;i++){ if(today>=WEEKS[i].start && today<=WEEKS[i].end) return i; }
+  if(today < WEEKS[0].start) return -1;
+  return WEEKS.length;
+}
+function cumulativePlannedToDate(){
+  const today = todayISO();
+  let total = 0;
+  WEEKS.forEach(function(w){
+    if(w.end < today){ total += w.target; }
+    else if(w.start <= today && today <= w.end){
+      const startD = new Date(w.start+'T00:00:00');
+      const endD = new Date(w.end+'T00:00:00');
+      const curD = new Date(today+'T00:00:00');
+      const totalDays = Math.round((endD-startD)/86400000)+1;
+      const elapsedDays = Math.round((curD-startD)/86400000)+1;
+      total += w.target * Math.min(1, elapsedDays/totalDays);
+    }
+  });
+  return Math.round(total*10)/10;
+}
+
+function renderStats(){
+  const summaryEl = document.getElementById('statsSummary');
+  const domainesEl = document.getElementById('statsDomaines');
+  if(!summaryEl || !domainesEl) return;
+
+  const s = computeStats();
+  const planned = cumulativePlannedToDate();
+  const diff = Math.round((s.hours - planned)*10)/10;
+  const idx = weekIndexForToday();
+  const weekLabel = idx<0 ? 'avant le debut' : (idx>=WEEKS.length ? 'plan termine' : ('S'+(idx+1)+' - '+WEEKS[idx].topic));
+
+  summaryEl.innerHTML =
+    '<div class="stats-summary-row">'+
+      '<div class="ss-card"><div class="ss-num">'+weekLabel+'</div><div class="ss-label">Semaine actuelle</div></div>'+
+      '<div class="ss-card"><div class="ss-num">'+planned+'h</div><div class="ss-label">Prevu cumule a ce jour</div></div>'+
+      '<div class="ss-card"><div class="ss-num">'+s.hours+'h</div><div class="ss-label">Reel cumule (total)</div></div>'+
+      '<div class="ss-card"><div class="ss-num '+(diff>=0?'ahead':'behind')+'">'+(diff>=0?'+':'')+diff+'h</div><div class="ss-label">'+(diff>=0?'Avance sur le prevu':'Retard sur le prevu')+'</div></div>'+
+    '</div>';
+
+  const byLm = actualHoursByLm();
+  const today = todayISO();
+  let html = '<div class="stats-legend">'+
+    '<span>&#10003; module marque termine (checklist manuelle, independant des heures)</span>'+
+    '<span>&#9675; pas encore marque termine — clique pour changer</span>'+
+  '</div>';
+  TOPICS.forEach(function(t){
+    const real = actualHoursByDomaine(t.id);
+    const target = PLANNED_BY_TOPIC[t.id] || 0;
+    const pct = target>0 ? Math.min(100, Math.round((real/target)*100)) : 0;
+    const deadline = DOMAINE_DEADLINE[t.id];
+    const pastDeadline = deadline ? (today > deadline) : false;
+    const isDone = real >= target;
+    let statusClass, statusLabel, barColor;
+    if(isDone){
+      statusClass='ok'; statusLabel='termine'; barColor='var(--done)';
+    } else if(pastDeadline){
+      statusClass='behind'; statusLabel='en retard'; barColor='#f4736a';
+    } else {
+      statusClass='ontime'; statusLabel='dans les temps'; barColor='var(--gold)';
+    }
+    const isOpen = statsOpenIds.indexOf(t.id) !== -1;
+    html += '<div class="domaine-card">'+
+      '<div class="domaine-head" data-domaine="'+t.id+'">'+
+        '<span class="domaine-sw" style="background:'+t.color+'"></span>'+
+        '<span class="domaine-name">'+t.name+'</span>'+
+        '<span class="domaine-status '+statusClass+'">'+statusLabel+'</span>'+
+        '<span class="domaine-hours"><b>'+real+'h</b> / '+target+'h prevu</span>'+
+        '<span class="chev" style="transform:rotate('+(isOpen?90:0)+'deg)">&#9656;</span>'+
+      '</div>'+
+      '<div class="domaine-bar-track"><div class="domaine-bar-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div>'+
+      '<div class="domaine-sub'+(isOpen?' open':'')+'" id="domsub-'+t.id+'">'+
+        t.lms.map(function(lm,i){
+          const key = t.id+'-'+i;
+          const rh = byLm[key] || 0;
+          const done = !!state.lmChecked[key];
+          return '<div class="sub-row">'+
+            '<span class="sr-done" data-lmkey="'+key+'" style="color:'+(done?'var(--done)':'var(--text-faint)')+'" title="Marquer ce module comme termine / pas termine">'+(done?'&#10003;':'&#9675;')+'</span>'+
+            '<span class="sr-name">'+lm+'</span>'+
+            '<span class="sr-hours">'+(rh>0?rh+'h':'-')+'</span>'+
+          '</div>';
+        }).join('')+
+      '</div>'+
+    '</div>';
+  });
+  const generalH = actualHoursGeneral();
+  html += '<div class="general-note">+ '+generalH+'h en revision transverse / mocks complets (non ventilees par domaine, comptees dans le total).</div>';
+  domainesEl.innerHTML = html;
+
+  domainesEl.querySelectorAll('.sr-done').forEach(function(sr){
+    sr.addEventListener('click', function(e){
+      e.stopPropagation();
+      const key = e.currentTarget.dataset.lmkey;
+      state.lmChecked[key] = !state.lmChecked[key];
+      saveState();
+      renderStats(); renderTopics(); renderHeader();
+    });
+  });
+  domainesEl.querySelectorAll('.domaine-head').forEach(function(h){
+    h.addEventListener('click', function(){
+      const id = h.dataset.domaine;
+      const sub = document.getElementById('domsub-'+id);
+      if(!sub) return;
+      const nowOpen = sub.classList.toggle('open');
+      const chev = h.querySelector('.chev');
+      if(chev) chev.style.transform = 'rotate('+(nowOpen?90:0)+'deg)';
+      if(nowOpen){ if(statsOpenIds.indexOf(id)===-1) statsOpenIds.push(id); }
+      else{ statsOpenIds = statsOpenIds.filter(function(x){ return x!==id; }); }
+    });
+  });
+}
+
+function initTabs(){
+  const tabRoute = document.getElementById('tabRoute');
+  const tabStats = document.getElementById('tabStats');
+  const viewRoute = document.getElementById('viewRoute');
+  const viewStats = document.getElementById('viewStats');
+  if(!tabRoute || !tabStats || !viewRoute || !viewStats) return;
+  tabRoute.addEventListener('click', function(){
+    tabRoute.classList.add('active'); tabStats.classList.remove('active');
+    viewRoute.classList.add('active'); viewStats.classList.remove('active');
+  });
+  tabStats.addEventListener('click', function(){
+    tabStats.classList.add('active'); tabRoute.classList.remove('active');
+    viewStats.classList.add('active'); viewRoute.classList.remove('active');
+    renderStats();
+  });
+}
+
 function render(initial){
   renderHeader();
   renderLedger();
@@ -1300,6 +1648,7 @@ function render(initial){
   renderTopics();
   renderDonut();
   renderCalendar();
+  renderStats();
   if(initial) initTilt();
 }
 
@@ -1311,6 +1660,7 @@ document.getElementById('resetBtn').addEventListener('click', function(){
 });
 
 initCalendarNav();
+initTabs();
 loadState();
 </script>
 </body>
