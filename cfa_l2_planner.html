@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feuille de route — CFA Level II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b1420;
+    --ink-2:#121e30;
+    --ink-3:#1a2a41;
+    --ink-4:#213656;
+    --line: rgba(201,164,92,0.16);
+    --line-strong: rgba(201,164,92,0.35);
+    --gold:#c9a45c;
+    --gold-soft:#e3c98a;
+    --text:#eae4d4;
+    --text-dim:#94a1b9;
+    --text-faint:#5c6a83;
+    --contenu: #4f7d9c;
+    --vacances: #8a6ea8;
+    --mocks: #c9a45c;
+    --done: #6f9c7c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(79,125,156,0.15), transparent),
+      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(201,164,92,0.08), transparent),
+      var(--ink);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:0 0 80px 0;
+    min-height:100vh;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px;}
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .fade-in{animation:fadeUp .6s ease both;}
+
+  header{
+    padding:48px 22px 30px 22px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:36px;
+    position:relative;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(28px,4vw,42px);
+    margin:0 0 6px 0;
+    color:var(--text);
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--text-dim);
+    font-size:15px;
+    margin-bottom:22px;
+  }
+
+  .drive-bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    margin-bottom:26px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+  }
+  .drive-btn{
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:8px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    display:flex;align-items:center;gap:7px;
+    transition:.2s;
+  }
+  .drive-btn:hover{border-color:var(--gold);color:var(--gold-soft);transform:translateY(-1px);}
+  .drive-btn svg{width:14px;height:14px;}
+  .drive-status{color:var(--text-faint);font-size:11px;}
+  .drive-status.connected{color:var(--done);}
+
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+    perspective:900px;
+  }
+  .stat{
+    background:linear-gradient(155deg, var(--ink-3), var(--ink-2));
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 18px;
+    transform-style:preserve-3d;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .2s;
+    will-change:transform;
+    box-shadow:0 10px 24px -16px rgba(0,0,0,0.6);
+  }
+  .stat:hover{border-color:var(--line-strong); box-shadow:0 18px 34px -14px rgba(0,0,0,0.7);}
+  .stat-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:27px;
+    color:var(--gold-soft);
+    line-height:1;
+    transform:translateZ(18px);
+  }
+  .stat-label{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:6px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    transform:translateZ(10px);
+  }
+  .progress-track{
+    margin-top:18px;
+    height:7px;
+    background:var(--ink-3);
+    border-radius:4px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--gold-soft),var(--gold));
+    border-radius:4px;
+    transition:width .6s cubic-bezier(.2,.8,.2,1);
+    box-shadow:0 0 14px rgba(201,164,92,0.5);
+  }
+
+  .section-title{
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:500;
+    margin:0 0 4px 0;
+  }
+  .section-sub{
+    color:var(--text-dim);
+    font-size:13px;
+    margin-bottom:18px;
+  }
+
+  .ledger{
+    display:flex;
+    gap:3px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .tick{
+    flex:1;
+    min-width:16px;
+    cursor:pointer;
+    border-radius:3px;
+    background:var(--ink-3);
+    position:relative;
+    height:44px;
+    display:flex;
+    align-items:flex-end;
+    border:1px solid transparent;
+    transition:transform .15s, border-color .15s;
+  }
+  .tick:hover{transform:translateY(-3px); border-color:var(--gold);}
+  .tick-fill{
+    width:100%;
+    border-radius:2px;
+    transition:height .3s ease, opacity .2s ease;
+  }
+  .tick.contenu .tick-fill{background:var(--contenu);}
+  .tick.vacances .tick-fill{background:var(--vacances);}
+  .tick.mocks .tick-fill{background:var(--mocks);}
+  .tick.done{border-color:var(--done);}
+  .legend{
+    display:flex;gap:18px;flex-wrap:wrap;
+    font-size:12px;color:var(--text-dim);
+    margin-bottom:40px;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+  .donut-section{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:30px;
+    align-items:center;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px;
+    margin-bottom:44px;
+  }
+  .donut-wrap{position:relative;}
+  #donutTooltip{
+    position:fixed;
+    pointer-events:none;
+    background:var(--ink-4);
+    border:1px solid var(--gold);
+    border-radius:6px;
+    padding:8px 11px;
+    font-size:12px;
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--text);
+    opacity:0;
+    transition:opacity .12s;
+    z-index:50;
+    white-space:nowrap;
+  }
+  #donutTooltip .tt-name{color:var(--gold-soft); font-family:'Inter',sans-serif; font-weight:600; margin-bottom:2px;}
+  .donut-center-label{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    text-align:center; pointer-events:none;
+  }
+  .donut-center-label .n{font-family:'IBM Plex Mono',monospace; font-size:22px; color:var(--gold-soft);}
+  .donut-center-label .l{font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em;}
+  .donut-legend{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;}
+  .donut-legend-item{
+    display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);
+    cursor:pointer; padding:4px 6px; border-radius:5px; transition:background .15s;
+  }
+  .donut-legend-item:hover{background:var(--ink-3); color:var(--text);}
+  .donut-legend-item .sw{width:9px;height:9px;border-radius:50%;flex:none;}
+  .donut-legend-item .q{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint);}
+  path.slice{transition:transform .15s ease, opacity .15s; transform-origin:100px 100px; cursor:pointer;}
+  path.slice:hover{transform:scale(1.045); filter:brightness(1.15);}
+
+  .note{
+    font-size:12.5px;color:var(--text-dim);
+    background:rgba(138,110,168,.1);
+    border:1px solid rgba(138,110,168,.25);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:30px;
+  }
+
+  /* Calendar */
+  .cal-wrap{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:40px;
+  }
+  .cal-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .cal-nav{
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    width:30px;height:30px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    transition:.15s;
+  }
+  .cal-nav:hover{border-color:var(--gold);color:var(--gold-soft);}
+  .cal-nav:disabled{opacity:.3;cursor:default;}
+  .cal-nav:disabled:hover{border-color:var(--line);color:var(--text-dim);}
+  .cal-month-label{
+    font-family:'Fraunces',serif;
+    font-size:17px;
+    color:var(--text);
+  }
+  .cal-weekdays{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+    margin-bottom:6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:var(--text-faint);
+    text-transform:uppercase;
+    text-align:center;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .cal-day{
+    aspect-ratio:1;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:var(--ink-3);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    cursor:pointer;
+    position:relative;
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .cal-day:hover{transform:translateY(-2px); border-color:var(--gold); box-shadow:0 8px 16px -10px rgba(0,0,0,.6);}
+  .cal-day.empty{visibility:hidden; cursor:default;}
+  .cal-day.out-of-range{opacity:.3; cursor:default;}
+  .cal-day.out-of-range:hover{transform:none; border-color:var(--line); box-shadow:none;}
+  .cal-day.contenu{border-left:3px solid var(--contenu);}
+  .cal-day.vacances{border-left:3px solid var(--vacances);}
+  .cal-day.mocks{border-left:3px solid var(--mocks);}
+  .cal-day .dnum{font-size:13px; color:var(--text);}
+  .cal-day .dhours{font-size:9.5px; color:var(--gold-soft); margin-top:2px;}
+  .cal-day.has-log{background:rgba(201,164,92,.08);}
+  .cal-day.is-today{box-shadow:0 0 0 2px var(--gold-soft) inset;}
+  .cal-legend-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:12px;font-size:11px;color:var(--text-faint);
+  }
+
+  .day-panel{
+    margin-top:16px;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+    animation:fadeUp .25s ease both;
+  }
+  .day-panel-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;
+  }
+  .day-panel-head .dp-date{
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    color:var(--gold-soft);
+  }
+  .dp-context{
+    font-size:12px;color:var(--text-dim);
+    margin-bottom:14px;
+  }
+  .dp-close{
+    cursor:pointer;color:var(--text-faint);
+    width:24px;height:24px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+    transition:.15s;
+  }
+  .dp-close:hover{color:var(--gold-soft); border-color:var(--gold);}
+  .dp-field{margin-bottom:12px;}
+  .dp-field label{
+    display:block;font-size:11px;color:var(--text-dim);
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
+  }
+  .dp-field input, .dp-field textarea{
+    width:100%;
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:9px 11px;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    resize:vertical;
+  }
+  .dp-field input:focus, .dp-field textarea:focus{outline:none;border-color:var(--gold);}
+  .dp-save{
+    background:linear-gradient(135deg,var(--gold-soft),var(--gold));
+    color:#1a1204;
+    border:none;
+    padding:9px 20px;
+    border-radius:20px;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    transition:transform .15s;
+  }
+  .dp-save:hover{transform:translateY(-1px);}
+  .dp-saved-msg{
+    font-size:11.5px;color:var(--done);margin-left:12px;opacity:0;transition:opacity .2s;
+  }
+  .dp-saved-msg.show{opacity:1;}
+
+  .week{
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--ink-2);
+    padding:16px 18px;
+    margin-bottom:10px;
+    display:grid;
+    grid-template-columns:auto 1fr auto auto;
+    gap:16px;
+    align-items:center;
+    scroll-margin-top:20px;
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s;
+  }
+  .week:hover{transform:translateY(-3px) scale(1.003); box-shadow:0 14px 28px -18px rgba(0,0,0,0.7); border-color:var(--line-strong);}
+  .week.is-done{border-color:var(--done);}
+  .week-id{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--text-faint);
+    font-size:12px;
+    width:30px;
+  }
+  .week-main .week-range{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:3px;
+  }
+  .week-main .week-topic{font-size:14.5px;}
+  .phase-tag{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:2px 7px;
+    border-radius:20px;
+    margin-left:8px;
+    position:relative;
+    top:-1px;
+  }
+  .phase-tag.contenu{background:rgba(79,125,156,.22);color:#8fb6d4;}
+  .phase-tag.vacances{background:rgba(138,110,168,.25);color:#c3aede;}
+  .phase-tag.mocks{background:rgba(201,164,92,.22);color:var(--gold-soft);}
+  .hours-input{
+    display:flex;align-items:center;gap:6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .hours-input input{
+    width:52px;
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:5px;
+    padding:5px 6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    text-align:center;
+    transition:border-color .15s;
+  }
+  .hours-input input:focus{outline:none;border-color:var(--gold);}
+  .check{
+    width:24px;height:24px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--done);
+    font-size:14px;
+    background:var(--ink-3);
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), background .15s, border-color .15s;
+  }
+  .check.checked{background:rgba(111,156,124,.22);border-color:var(--done);}
+  .check.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes pop{ 0%{transform:scale(1);} 45%{transform:scale(1.35);} 100%{transform:scale(1);} }
+
+  .topics{margin-top:44px;}
+  .topic{
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin-bottom:8px;
+    background:var(--ink-2);
+    overflow:hidden;
+    transition:border-color .15s;
+  }
+  .topic:hover{border-color:var(--line-strong);}
+  .topic-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    cursor:pointer;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .topic-name{font-size:14.5px;}
+  .topic-weight{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    margin-left:8px;
+  }
+  .topic-qcount{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--gold-soft);
+    background:rgba(201,164,92,.12);
+    border:1px solid rgba(201,164,92,.25);
+    padding:2px 8px;
+    border-radius:20px;
+    margin-left:8px;
+  }
+  .topic-progress{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--gold-soft);
+    display:flex;align-items:center;gap:10px;
+  }
+  .mini-bar{
+    width:70px;height:4px;background:var(--ink-3);border-radius:2px;overflow:hidden;
+  }
+  .mini-fill{height:100%;background:var(--gold); transition:width .4s ease;}
+  .lm-list{
+    border-top:1px solid var(--line);
+    padding:0 18px;
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .35s ease, padding .35s ease;
+  }
+  .lm-list.open{
+    max-height:600px;
+    padding:6px 18px 14px 18px;
+  }
+  .lm-item{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:8px 0;
+    font-size:13.5px;
+    color:var(--text-dim);
+    border-bottom:1px solid rgba(255,255,255,0.03);
+  }
+  .lm-item:last-child{border-bottom:none;}
+  .lm-check{
+    width:16px;height:16px;flex:none;margin-top:2px;
+    border-radius:4px;border:1px solid var(--line);
+    cursor:pointer;background:var(--ink-3);
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:var(--done);
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .lm-check.checked{background:rgba(111,156,124,.22);border-color:var(--done);}
+  .lm-check.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1);}
+  .lm-text.checked{color:var(--text-faint);text-decoration:line-through;}
+  .chev{color:var(--text-faint);font-size:12px;transition:transform .25s;}
+  .topic-head.open .chev{transform:rotate(90deg);}
+
+  footer{
+    margin-top:50px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;color:var(--text-faint);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .reset-btn{
+    background:none;border:1px solid var(--line);color:var(--text-faint);
+    padding:6px 12px;border-radius:20px;font-size:11px;cursor:pointer;
+    font-family:'Inter',sans-serif;
+    transition:.2s;
+  }
+  .reset-btn:hover{border-color:#c17a68;color:#e0968a;}
+
+  @media (max-width:640px){
+    .week{grid-template-columns:1fr;gap:10px;}
+    .week-id{display:none;}
+    .donut-section{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="fade-in">
+    <div class="eyebrow">CFA Program · Level II · Session Novembre 2026</div>
+    <h1>Feuille de route</h1>
+    <div class="subtitle">13 juillet → 18 novembre 2026 · Objectif : 402h · Fenêtre d'examen 18–22 nov. · 88 questions scorées</div>
+
+    <div class="drive-bar">
+      <div class="drive-btn" id="btnConnect">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3L1 14.5 4.5 21 11 9.5 7.5 3z"/><path d="M9.5 21h11L17 14.5H6L9.5 21z"/><path d="M16.5 3L23 14.5l-3.5 6.5L13 9.5 16.5 3z"/></svg>
+        Connecter Google Drive
+      </div>
+      <div class="drive-btn" id="btnSave">↑ Sauvegarder</div>
+      <div class="drive-btn" id="btnLoad">↓ Charger</div>
+      <span class="drive-status" id="driveStatus">non connecté</span>
+    </div>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat">
+        <div class="stat-num" id="statHours">0<span style="color:var(--text-faint);font-size:15px;">/402h</span></div>
+        <div class="stat-label">Heures loguées</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="statLM">0<span style="color:var(--text-faint);font-size:15px;">/45</span></div>
+        <div class="stat-label">Learning Modules</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="statDays">—</div>
+        <div class="stat-label">Jours avant l'examen</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="statWeeks">0<span style="color:var(--text-faint);font-size:15px;">/19</span></div>
+        <div class="stat-label">Semaines bouclées</div>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </header>
+
+  <div class="section-title">Répartition de l'examen</div>
+  <div class="section-sub">88 questions scorées, réparties selon la pondération officielle 2026 — survole ou clique un thème</div>
+  <div class="donut-section">
+    <div class="donut-wrap">
+      <svg id="donutSvg" viewBox="0 0 200 200" width="200" height="200"></svg>
+      <div class="donut-center-label">
+        <div class="n">88</div>
+        <div class="l">questions</div>
+      </div>
+    </div>
+    <div class="donut-legend" id="donutLegend"></div>
+  </div>
+  <div id="donutTooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
+
+  <div class="section-title">Calendrier</div>
+  <div class="section-sub">Clique un jour pour enregistrer le temps passé et les sujets travaillés ce jour-là</div>
+  <div class="cal-wrap">
+    <div class="cal-header">
+      <div class="cal-nav" id="calPrev">‹</div>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <div class="cal-nav" id="calNext">›</div>
+    </div>
+    <div class="cal-weekdays">
+      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend-row">
+      <span><span class="dot" style="background:var(--contenu)"></span> contenu &nbsp; <span class="dot" style="background:var(--vacances)"></span> vacances &nbsp; <span class="dot" style="background:var(--mocks)"></span> mocks</span>
+      <span id="calMonthTotal">0h ce mois</span>
+    </div>
+    <div class="day-panel" id="dayPanel" style="display:none;">
+      <div class="day-panel-head">
+        <span class="dp-date" id="dayPanelDate"></span>
+        <span class="dp-close" id="dayPanelClose">✕</span>
+      </div>
+      <div class="dp-context" id="dayPanelContext"></div>
+      <div class="dp-field">
+        <label>Heures travaillées ce jour</label>
+        <input type="number" id="dayHours" min="0" step="0.5" placeholder="0">
+      </div>
+      <div class="dp-field">
+        <label>Sujet(s) / notes</label>
+        <textarea id="dayTopics" rows="2" placeholder="ex: Fixed Income - arbitrage-free valuation, vignettes 1-4"></textarea>
+      </div>
+      <button class="dp-save" id="daySave">Enregistrer</button>
+      <span class="dp-saved-msg" id="daySavedMsg">enregistré ✓</span>
+    </div>
+  </div>
+
+  <div class="section-title">Ligne de temps</div>
+  <div class="section-sub">Registre des 19 semaines — clique une colonne pour aller à la semaine</div>
+  <div class="ledger" id="ledger"></div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--contenu)"></span>Contenu</span>
+    <span><span class="dot" style="background:var(--vacances)"></span>Vacances (allégé)</span>
+    <span><span class="dot" style="background:var(--mocks)"></span>Mocks & révision</span>
+  </div>
+
+  <div class="note">
+    Semaines 9–10 (7–20 sept.) : vacances intégrées. Derivatives est traité en léger le soir pendant le séjour, la fin du sujet + Alternative Investments sont repris au retour. Le déficit d'heures est absorbé par la marge du plan — un rattrapage ciblé sur ces deux thèmes est prévu semaine 18, en phase mocks.
+  </div>
+
+  <div class="section-title">Semaines</div>
+  <div class="section-sub">Entre les heures loguées et l'objectif de la semaine — coche quand c'est bouclé</div>
+  <div id="weeksList"></div>
+
+  <div class="topics">
+    <div class="section-title">Learning Modules par thème</div>
+    <div class="section-sub">45 LM au total — cf. 2026 Level II Topic Outlines</div>
+    <div id="topicsList"></div>
+  </div>
+
+  <footer>
+    <span>Sauvegarde auto locale · Drive en backup manuel</span>
+    <button class="reset-btn" id="resetBtn">Réinitialiser le suivi</button>
+  </footer>
+</div>
+
+<script>
+/* ============ CONFIG DRIVE ============
+   1. Cree un OAuth Client ID "Web application" dans Google Cloud Console
+      (APIs & Services > Identifiants), avec comme origine JS autorisee
+      l'URL ou tu heberges ce fichier (ex: https://tonuser.github.io).
+   2. Active l'API Google Drive sur le projet.
+   3. Colle le Client ID ci-dessous.
+   Le scope drive.file limite l'acces aux seuls fichiers crees par cet outil.
+   Les scripts Google ne sont charges qu'au clic sur "Connecter" (pas au
+   chargement de la page) pour eviter tout crash si le reseau les bloque.
+*/
+const CLIENT_ID = '351870287508-mpgb979e45hhe7r74kcjclhdtmfachfp.apps.googleusercontent.com';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const BACKUP_FILENAME = 'cfa_l2_planner_backup.json';
+let tokenClient = null, googleReady = false, accessToken = null;
+
+function loadExternalScript(src){
+  return new Promise(function(resolve, reject){
+    const existing = document.querySelector('script[data-src="'+src+'"]');
+    if(existing){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.dataset.src = src;
+    s.onload = function(){ resolve(); };
+    s.onerror = function(){ reject(new Error('Impossible de charger '+src)); };
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureGoogleReady(){
+  if(googleReady) return;
+  await loadExternalScript('https://accounts.google.com/gsi/client');
+  await loadExternalScript('https://apis.google.com/js/api.js');
+  await new Promise(function(resolve, reject){
+    if(typeof gapi === 'undefined'){ reject(new Error('gapi indisponible')); return; }
+    gapi.load('client', function(){
+      gapi.client.init({}).then(function(){
+        return gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+      }).then(resolve).catch(reject);
+    });
+  });
+  if(typeof google === 'undefined' || !google.accounts){
+    throw new Error('Google Identity Services indisponible');
+  }
+  googleReady = true;
+}
+
+function ensureTokenClient(){
+  if(tokenClient) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: ''
+  });
+}
+function setDriveStatus(text, connected){
+  const el = document.getElementById('driveStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.toggle('connected', !!connected);
+}
+async function connectDrive(){
+  if(CLIENT_ID.indexOf('TON_CLIENT_ID') === 0){
+    alert("Configure d'abord ton Client ID Google (voir commentaire CONFIG DRIVE en haut du script).");
+    return;
+  }
+  if(location.protocol === 'file:'){
+    setDriveStatus('ouvre le fichier via une URL http(s), pas en local', false);
+    alert("Google bloque la connexion quand le fichier est ouvert en local (file://). Heberge-le (ex: GitHub Pages) puis reessaie depuis cette URL.");
+    return;
+  }
+  try{
+    setDriveStatus('connexion aux services Google...', false);
+    await ensureGoogleReady();
+  }catch(e){
+    console.error(e);
+    setDriveStatus('echec chargement Google: '+(e && e.message ? e.message : 'inconnu'), false);
+    return;
+  }
+  try{
+    ensureTokenClient();
+  }catch(e){
+    console.error(e);
+    setDriveStatus('Client ID invalide: '+(e && e.message ? e.message : 'inconnu'), false);
+    return;
+  }
+  tokenClient.callback = async (resp) => {
+    if(resp.error){
+      console.error(resp);
+      setDriveStatus('refus Google: '+resp.error+' (verifie l\'origine autorisee)', false);
+      return;
+    }
+    accessToken = resp.access_token;
+    gapi.client.setToken({access_token: accessToken});
+    setDriveStatus('connecte', true);
+  };
+  try{
+    tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+  }catch(e){
+    console.error(e);
+    setDriveStatus('echec ouverture popup: '+(e && e.message ? e.message : 'inconnu'), false);
+  }
+}
+async function findBackupFile(){
+  const res = await gapi.client.drive.files.list({
+    q: `name='${BACKUP_FILENAME}' and trashed=false`,
+    fields: 'files(id,name,modifiedTime)'
+  });
+  return (res.result.files && res.result.files[0]) || null;
+}
+async function saveToDrive(){
+  if(!accessToken || !googleReady){ await connectDrive(); return; }
+  setDriveStatus('sauvegarde...', true);
+  const payload = JSON.stringify(Object.assign({}, state, {savedAt: new Date().toISOString()}));
+  const existing = await findBackupFile();
+  const boundary = 'cfa314159265';
+  const metadata = {name: BACKUP_FILENAME, mimeType: 'application/json'};
+  const body =
+    '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) + '\r\n' +
+    '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + payload + '\r\n' +
+    '--' + boundary + '--';
+  const path = existing ? ('/upload/drive/v3/files/' + existing.id + '?uploadType=multipart') : '/upload/drive/v3/files?uploadType=multipart';
+  const method = existing ? 'PATCH' : 'POST';
+  try{
+    await gapi.client.request({path: path, method: method, headers:{'Content-Type': 'multipart/related; boundary=' + boundary}, body: body});
+    setDriveStatus('sauvegarde OK', true);
+  }catch(e){ console.error(e); setDriveStatus('echec sauvegarde', false); }
+}
+async function loadFromDrive(){
+  if(!accessToken || !googleReady){ await connectDrive(); return; }
+  setDriveStatus('chargement...', true);
+  try{
+    const file = await findBackupFile();
+    if(!file){ setDriveStatus('aucune sauvegarde trouvee', true); return; }
+    const res = await gapi.client.drive.files.get({fileId: file.id, alt:'media'});
+    const data = typeof res.result === 'object' ? res.result : JSON.parse(res.body);
+    state = {dayLogs: data.dayLogs || {}, weekDone: data.weekDone || {}, lmChecked: data.lmChecked || {}};
+    await saveState(); render();
+    setDriveStatus('charge OK', true);
+  }catch(e){ console.error(e); setDriveStatus('echec chargement', false); }
+}
+(function wireDriveButtons(){
+  const c = document.getElementById('btnConnect');
+  const s = document.getElementById('btnSave');
+  const l = document.getElementById('btnLoad');
+  if(c) c.addEventListener('click', connectDrive);
+  if(s) s.addEventListener('click', saveToDrive);
+  if(l) l.addEventListener('click', loadFromDrive);
+})();
+
+const WEEKS = [
+  {id:'w1',  start:'2026-07-13', end:'2026-07-19', range:'13-19 juil.',        phase:'contenu',  topic:'Quantitative Methods',                                   target:21},
+  {id:'w2',  start:'2026-07-20', end:'2026-07-26', range:'20-26 juil.',        phase:'contenu',  topic:'FSA (1/2)',                                              target:18},
+  {id:'w3',  start:'2026-07-27', end:'2026-08-02', range:'27 juil.-2 aout',    phase:'contenu',  topic:'FSA (2/2)',                                              target:17},
+  {id:'w4',  start:'2026-08-03', end:'2026-08-09', range:'3-9 aout',           phase:'contenu',  topic:'Corporate Issuers',                                      target:21},
+  {id:'w5',  start:'2026-08-10', end:'2026-08-16', range:'10-16 aout',         phase:'contenu',  topic:'Equity Valuation (1/2)',                                 target:18},
+  {id:'w6',  start:'2026-08-17', end:'2026-08-23', range:'17-23 aout',         phase:'contenu',  topic:'Equity Valuation (2/2)',                                 target:17},
+  {id:'w7',  start:'2026-08-24', end:'2026-08-30', range:'24-30 aout',         phase:'contenu',  topic:'Fixed Income (1/2)',                                     target:18},
+  {id:'w8',  start:'2026-08-31', end:'2026-09-06', range:'31 aout-6 sept.',    phase:'contenu',  topic:'Fixed Income (2/2)',                                     target:17},
+  {id:'w9',  start:'2026-09-07', end:'2026-09-13', range:'7-13 sept.',         phase:'vacances', topic:'Derivatives - leger (soirees, vacances)',                target:10},
+  {id:'w10', start:'2026-09-14', end:'2026-09-20', range:'14-20 sept.',        phase:'vacances', topic:'Derivatives (fin) + Alt. Investments (intro)',           target:18},
+  {id:'w11', start:'2026-09-21', end:'2026-09-27', range:'21-27 sept.',        phase:'contenu',  topic:'Alternative Investments (fin + rattrapage)',             target:21},
+  {id:'w12', start:'2026-09-28', end:'2026-10-04', range:'28 sept.-4 oct.',    phase:'contenu',  topic:'Portfolio Management (1/2)',                             target:18},
+  {id:'w13', start:'2026-10-05', end:'2026-10-11', range:'5-11 oct.',          phase:'contenu',  topic:'Portfolio Management (2/2)',                             target:17},
+  {id:'w14', start:'2026-10-12', end:'2026-10-18', range:'12-18 oct.',         phase:'contenu',  topic:'Economics',                                              target:21},
+  {id:'w15', start:'2026-10-19', end:'2026-10-25', range:'19-25 oct.',         phase:'mocks',    topic:'Ethics - 1er passage complet',                          target:30},
+  {id:'w16', start:'2026-10-26', end:'2026-11-01', range:'26 oct.-1 nov.',     phase:'mocks',    topic:'Mock #1 + revue + drill FSA / Fixed Income',            target:36},
+  {id:'w17', start:'2026-11-02', end:'2026-11-08', range:'2-8 nov.',           phase:'mocks',    topic:'Mock #2 + revue + drill Equity / Portfolio Mgmt',       target:36},
+  {id:'w18', start:'2026-11-09', end:'2026-11-15', range:'9-15 nov.',          phase:'mocks',    topic:'Mock #3 + revue + Ethics 2e passage + drill DER/AI',    target:36},
+  {id:'w19', start:'2026-11-16', end:'2026-11-18', range:'16-18 nov.',         phase:'mocks',    topic:'Revision finale legere',                                 target:12},
+];
+
+const TOPICS = [
+  {id:'qm',  name:'Quantitative Methods',              weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#3ea8ff', lms:[
+    'Basics of Multiple Regression and Underlying Assumptions',
+    'Evaluating Regression Model Fit and Interpreting Model Results',
+    'Model Misspecification',
+    'Extensions of Multiple Regression',
+    'Time-Series Analysis',
+    'Machine Learning',
+    'Big Data Projects'
+  ]},
+  {id:'eco', name:'Economics',                          weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#22d3ee', lms:[
+    'Currency Exchange Rates: Understanding Equilibrium Value',
+    'Economic Growth'
+  ]},
+  {id:'fsa', name:'Financial Statement Analysis',       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#f43f5e', lms:[
+    'Intercorporate Investments',
+    'Employee Compensation: Post-Employment and Share-Based',
+    'Multinational Operations',
+    'Analysis of Financial Institutions',
+    'Evaluating Quality of Financial Reports',
+    'Integration of Financial Statement Analysis Techniques'
+  ]},
+  {id:'ci',  name:'Corporate Issuers',                  weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#4ade80', lms:[
+    'Analysis of Dividends and Share Repurchases',
+    'ESG Considerations in Investment Analysis',
+    'Cost of Capital: Advanced Topics',
+    'Corporate Restructuring'
+  ]},
+  {id:'ei',  name:'Equity Valuation',                   weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ffd23f', lms:[
+    'Equity Valuation: Applications and Processes',
+    'Discounted Dividend Valuation',
+    'Free Cash Flow Valuation',
+    'Market-Based Valuation: Price and Enterprise Value Multiples',
+    'Residual Income Valuation',
+    'Private Company Valuation'
+  ]},
+  {id:'fi',  name:'Fixed Income',                       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ff7a3d', lms:[
+    'The Term Structure and Interest Rate Dynamics',
+    'The Arbitrage-Free Valuation Framework',
+    'Valuation and Analysis of Bonds with Embedded Options',
+    'Credit Analysis Models',
+    'Credit Default Swaps'
+  ]},
+  {id:'der', name:'Derivatives',                        weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#8b5cf6', lms:[
+    'Pricing and Valuation of Forward Commitments',
+    'Valuation of Contingent Claims'
+  ]},
+  {id:'ai',  name:'Alternative Investments',            weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#fb923c', lms:[
+    'Introduction to Commodities and Commodity Derivatives',
+    'Overview of Types of Real Estate Investment',
+    'Investments in Real Estate through Publicly Traded Securities',
+    'Hedge Fund Strategies'
+  ]},
+  {id:'pm',  name:'Portfolio Management',               weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#2ee6a6', lms:[
+    'Economics and Investment Markets',
+    'Analysis of Active Portfolio Management',
+    'Exchange-Traded Funds: Mechanics and Applications',
+    'Using Multifactor Models',
+    'Measuring and Managing Market Risk',
+    'Backtesting and Simulation'
+  ]},
+  {id:'eth', name:'Ethical and Professional Standards',  weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ff4fa3', lms:[
+    'Code of Ethics and Standards of Professional Conduct',
+    'Guidance for Standards I-VII',
+    'Application of the Code and Standards: Level II'
+  ]},
+];
+
+const TOTAL_TARGET = WEEKS.reduce((a,w)=>a+w.target,0);
+const TOTAL_LM = TOPICS.reduce((a,t)=>a+t.lms.length,0);
+const EXAM_DATE = new Date('2026-11-18T00:00:00');
+
+let state = { dayLogs:{}, weekDone:{}, lmChecked:{} };
+let prevStats = {hours:0, lmCount:0, weeksDone:0};
+let calMonthIdx = 0;
+const CAL_MONTHS = [
+  {y:2026, m:6,  label:'Juillet 2026'},
+  {y:2026, m:7,  label:'Aout 2026'},
+  {y:2026, m:8,  label:'Septembre 2026'},
+  {y:2026, m:9,  label:'Octobre 2026'},
+  {y:2026, m:10, label:'Novembre 2026'}
+];
+
+async function loadState(){
+  try{
+    const res = await window.storage.get('cfa-l2-planner-state');
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      state = {
+        dayLogs: parsed.dayLogs || {},
+        weekDone: parsed.weekDone || {},
+        lmChecked: parsed.lmChecked || {}
+      };
+    }
+  }catch(e){ /* rien de sauvegarde encore */ }
+  render(true);
+}
+async function saveState(){
+  try{ await window.storage.set('cfa-l2-planner-state', JSON.stringify(state)); }
+  catch(e){ console.error('Storage error', e); }
+}
+
+function getWeekForDate(dateStr){
+  for(let i=0;i<WEEKS.length;i++){
+    if(dateStr >= WEEKS[i].start && dateStr <= WEEKS[i].end) return WEEKS[i];
+  }
+  return null;
+}
+function weekHoursFromLogs(week){
+  let total = 0;
+  Object.keys(state.dayLogs).forEach(function(d){
+    if(d >= week.start && d <= week.end){ total += Number(state.dayLogs[d].hours)||0; }
+  });
+  return total;
+}
+
+function computeStats(){
+  let hours=0;
+  Object.keys(state.dayLogs).forEach(function(d){ hours += Number(state.dayLogs[d].hours)||0; });
+  let lmCount=0;
+  TOPICS.forEach(t=>{ t.lms.forEach((_,i)=>{ if(state.lmChecked[t.id+'-'+i]) lmCount++; }); });
+  let weeksDone = WEEKS.filter(w=>state.weekDone[w.id]).length;
+  return {hours:hours, lmCount:lmCount, weeksDone:weeksDone};
+}
+function daysUntilExam(){
+  const now = new Date();
+  return Math.ceil((EXAM_DATE - now) / (1000*60*60*24));
+}
+function animateCount(el, from, to, suffixHtml){
+  const dur=500, start=performance.now();
+  from = Number(from)||0; to = Number(to)||0;
+  function step(t){
+    const p = Math.min(1, (t-start)/dur);
+    const eased = 1-Math.pow(1-p,3);
+    const val = Math.round(from + (to-from)*eased);
+    el.innerHTML = val + suffixHtml;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderHeader(){
+  const s = computeStats();
+  animateCount(document.getElementById('statHours'), prevStats.hours, s.hours, '<span style="color:var(--text-faint);font-size:15px;">/'+TOTAL_TARGET+'h</span>');
+  animateCount(document.getElementById('statLM'), prevStats.lmCount, s.lmCount, '<span style="color:var(--text-faint);font-size:15px;">/'+TOTAL_LM+'</span>');
+  animateCount(document.getElementById('statWeeks'), prevStats.weeksDone, s.weeksDone, '<span style="color:var(--text-faint);font-size:15px;">/'+WEEKS.length+'</span>');
+  const d = daysUntilExam();
+  document.getElementById('statDays').textContent = d > 0 ? d : (d===0 ? "J-0" : "passe");
+  const pct = Math.min(100, Math.round((s.hours/TOTAL_TARGET)*100));
+  document.getElementById('progressFill').style.width = pct + '%';
+  prevStats = s;
+}
+
+function renderLedger(){
+  const el = document.getElementById('ledger');
+  el.innerHTML='';
+  const maxTarget = Math.max.apply(null, WEEKS.map(function(w){return w.target;}));
+  WEEKS.forEach(function(w){
+    const done = !!state.weekDone[w.id];
+    const div = document.createElement('div');
+    div.className = 'tick '+w.phase+(done?' done':'');
+    div.title = w.range+' - '+w.topic;
+    const fill = document.createElement('div');
+    fill.className='tick-fill';
+    const h = Math.max(18, Math.round((w.target/maxTarget)*44));
+    fill.style.height = h+'px';
+    fill.style.opacity = done ? '1' : '0.55';
+    div.appendChild(fill);
+    div.addEventListener('click', function(){
+      const target = document.getElementById('week-'+w.id);
+      if(target) target.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    el.appendChild(div);
+  });
+}
+
+function renderWeeks(){
+  const el = document.getElementById('weeksList');
+  el.innerHTML='';
+  WEEKS.forEach(function(w,idx){
+    const done = !!state.weekDone[w.id];
+    const logged = weekHoursFromLogs(w);
+    const row = document.createElement('div');
+    row.className = 'week'+(done?' is-done':'');
+    row.id = 'week-'+w.id;
+    row.innerHTML =
+      '<div class="week-id">S'+(idx+1)+'</div>'+
+      '<div class="week-main">'+
+        '<div class="week-range">'+w.range+'</div>'+
+        '<div class="week-topic">'+w.topic+'<span class="phase-tag '+w.phase+'">'+w.phase+'</span></div>'+
+      '</div>'+
+      '<div class="hours-input" title="Renseigne les heures jour par jour dans le calendrier ci-dessus">'+
+        '<span style="color:'+(logged>0?'var(--gold-soft)':'var(--text-dim)')+'">'+logged+'</span>'+
+        '<span>/ '+w.target+'h</span>'+
+      '</div>'+
+      '<div class="check '+(done?'checked':'')+'" data-week="'+w.id+'">'+(done?'v':'')+'</div>';
+    el.appendChild(row);
+  });
+  el.querySelectorAll('.check[data-week]').forEach(function(chk){
+    chk.addEventListener('click', function(e){
+      const target = e.currentTarget;
+      const wk = target.dataset.week;
+      state.weekDone[wk] = !state.weekDone[wk];
+      target.classList.add('pop');
+      setTimeout(function(){ target.classList.remove('pop'); }, 350);
+      saveState(); render();
+    });
+  });
+}
+
+function renderTopics(){
+  const el = document.getElementById('topicsList');
+  const openIds = Array.prototype.slice.call(el.querySelectorAll('.lm-list.open')).map(function(n){return n.id;});
+  el.innerHTML='';
+  TOPICS.forEach(function(t){
+    const checkedCount = t.lms.filter(function(_,i){return state.lmChecked[t.id+'-'+i];}).length;
+    const pct = Math.round((checkedCount/t.lms.length)*100);
+    const box = document.createElement('div');
+    box.className='topic';
+    const lmHtml = t.lms.map(function(lm,i){
+      const key = t.id+'-'+i;
+      const checked = !!state.lmChecked[key];
+      return '<div class="lm-item">'+
+        '<div class="lm-check '+(checked?'checked':'')+'" data-key="'+key+'">'+(checked?'v':'')+'</div>'+
+        '<div class="lm-text '+(checked?'checked':'')+'">'+lm+'</div>'+
+      '</div>';
+    }).join('');
+    box.innerHTML =
+      '<div class="topic-head" data-topic="'+t.id+'">'+
+        '<div><span class="topic-name">'+t.name+'</span><span class="topic-weight">'+t.weight+'</span><span class="topic-qcount">~'+t.qLo+'-'+t.qHi+' Q / 88</span></div>'+
+        '<div class="topic-progress">'+
+          '<div class="mini-bar"><div class="mini-fill" style="width:'+pct+'%"></div></div>'+
+          checkedCount+'/'+t.lms.length+
+          '<span class="chev">&#9656;</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="lm-list" id="lmlist-'+t.id+'">'+lmHtml+'</div>';
+    el.appendChild(box);
+  });
+  el.querySelectorAll('.topic-head').forEach(function(h){
+    h.addEventListener('click', function(){
+      const id = h.dataset.topic;
+      const list = document.getElementById('lmlist-'+id);
+      if(!list) return;
+      list.classList.toggle('open');
+      h.classList.toggle('open');
+    });
+  });
+  openIds.forEach(function(id){
+    const list = document.getElementById(id);
+    if(list){
+      list.classList.add('open');
+      const head = document.querySelector('.topic-head[data-topic="'+id.replace('lmlist-','')+'"]');
+      if(head) head.classList.add('open');
+    }
+  });
+  el.querySelectorAll('.lm-check').forEach(function(c){
+    c.addEventListener('click', function(e){
+      e.stopPropagation();
+      const target = e.currentTarget;
+      const key = target.dataset.key;
+      state.lmChecked[key] = !state.lmChecked[key];
+      target.classList.add('pop');
+      setTimeout(function(){ target.classList.remove('pop'); }, 350);
+      saveState(); renderHeader(); renderTopics();
+    });
+  });
+}
+
+function polarToCartesian(cx,cy,r,angleDeg){
+  const rad = (angleDeg-90) * Math.PI/180;
+  return {x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad)};
+}
+function describeArc(cx,cy,rOuter,rInner,startAngle,endAngle){
+  const startOuter = polarToCartesian(cx,cy,rOuter,endAngle);
+  const endOuter = polarToCartesian(cx,cy,rOuter,startAngle);
+  const startInner = polarToCartesian(cx,cy,rInner,startAngle);
+  const endInner = polarToCartesian(cx,cy,rInner,endAngle);
+  const largeArc = (endAngle-startAngle) <= 180 ? 0 : 1;
+  return ['M', startOuter.x, startOuter.y,
+    'A', rOuter, rOuter, 0, largeArc, 0, endOuter.x, endOuter.y,
+    'L', startInner.x, startInner.y,
+    'A', rInner, rInner, 0, largeArc, 1, endInner.x, endInner.y,
+    'Z'].join(' ');
+}
+function scrollToTopic(id){
+  const head = document.querySelector('.topic-head[data-topic="'+id+'"]');
+  if(!head) return;
+  head.scrollIntoView({behavior:'smooth', block:'center'});
+  const list = document.getElementById('lmlist-'+id);
+  if(list && !list.classList.contains('open')){
+    list.classList.add('open');
+    head.classList.add('open');
+  }
+}
+function renderDonut(){
+  const svg = document.getElementById('donutSvg');
+  svg.innerHTML='';
+  let angle=0;
+  const tooltip = document.getElementById('donutTooltip');
+  TOPICS.forEach(function(t){
+    const sweep = (t.mid/100)*360;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', describeArc(100,100,80,50, angle, angle+sweep));
+    path.setAttribute('fill', t.color);
+    path.classList.add('slice');
+    path.addEventListener('mousemove',function(e){
+      tooltip.querySelector('.tt-name').textContent = t.name;
+      tooltip.querySelector('.tt-detail').textContent = t.weight+' - ~'+t.qLo+'-'+t.qHi+' questions';
+      tooltip.style.left = (e.clientX+14)+'px';
+      tooltip.style.top = (e.clientY+10)+'px';
+      tooltip.style.opacity='1';
+    });
+    path.addEventListener('mouseleave',function(){ tooltip.style.opacity='0'; });
+    path.addEventListener('click', function(){ scrollToTopic(t.id); });
+    svg.appendChild(path);
+    angle += sweep;
+  });
+
+  const legend = document.getElementById('donutLegend');
+  legend.innerHTML = TOPICS.map(function(t){
+    return '<div class="donut-legend-item" data-topic="'+t.id+'">'+
+      '<span class="sw" style="background:'+t.color+'"></span>'+
+      t.name+
+      '<span class="q">~'+t.qLo+'-'+t.qHi+'</span>'+
+    '</div>';
+  }).join('');
+  legend.querySelectorAll('.donut-legend-item').forEach(function(item){
+    item.addEventListener('click', function(){ scrollToTopic(item.dataset.topic); });
+  });
+}
+
+function initTilt(){
+  document.querySelectorAll('.stat').forEach(function(card){
+    card.addEventListener('mousemove',function(e){
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left)/r.width - 0.5;
+      const y = (e.clientY - r.top)/r.height - 0.5;
+      card.style.transform = 'rotateY('+(x*8)+'deg) rotateX('+(-y*8)+'deg) translateY(-2px)';
+    });
+    card.addEventListener('mouseleave',function(){ card.style.transform = 'rotateY(0) rotateX(0) translateY(0)'; });
+  });
+}
+
+let selectedDay = null;
+
+function pad2(n){ return n<10 ? '0'+n : ''+n; }
+function toISO(y,m,d){ return y+'-'+pad2(m+1)+'-'+pad2(d); }
+function todayISO(){
+  const t = new Date();
+  return toISO(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
+function renderCalendar(){
+  const mo = CAL_MONTHS[calMonthIdx];
+  document.getElementById('calMonthLabel').textContent = mo.label;
+  document.getElementById('calPrev').toggleAttribute('disabled', calMonthIdx===0);
+  document.getElementById('calNext').toggleAttribute('disabled', calMonthIdx===CAL_MONTHS.length-1);
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML='';
+  const firstOfMonth = new Date(mo.y, mo.m, 1);
+  const daysInMonth = new Date(mo.y, mo.m+1, 0).getDate();
+  let startWeekday = firstOfMonth.getDay();
+  startWeekday = startWeekday===0 ? 6 : startWeekday-1;
+
+  for(let i=0;i<startWeekday;i++){
+    const empty = document.createElement('div');
+    empty.className='cal-day empty';
+    grid.appendChild(empty);
+  }
+
+  let monthTotal = 0;
+  const today = todayISO();
+
+  for(let d=1; d<=daysInMonth; d++){
+    const iso = toISO(mo.y, mo.m, d);
+    const week = getWeekForDate(iso);
+    const log = state.dayLogs[iso];
+    const cell = document.createElement('div');
+    let cls = 'cal-day';
+    if(!week){ cls += ' out-of-range'; }
+    else { cls += ' '+week.phase; }
+    if(log && Number(log.hours)>0){ cls += ' has-log'; monthTotal += Number(log.hours); }
+    if(iso===today){ cls += ' is-today'; }
+    cell.className = cls;
+    cell.innerHTML = '<div class="dnum">'+d+'</div>' + (log && Number(log.hours)>0 ? '<div class="dhours">'+log.hours+'h</div>' : '');
+    if(week){
+      cell.addEventListener('click', function(){ openDayPanel(iso); });
+    }
+    grid.appendChild(cell);
+  }
+  document.getElementById('calMonthTotal').textContent = monthTotal+'h ce mois';
+}
+
+function openDayPanel(iso){
+  selectedDay = iso;
+  const week = getWeekForDate(iso);
+  const panel = document.getElementById('dayPanel');
+  const log = state.dayLogs[iso] || {hours:'', topics:''};
+  panel.style.display = 'block';
+  const dateObj = new Date(iso+'T00:00:00');
+  const fmt = dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  document.getElementById('dayPanelDate').textContent = fmt.charAt(0).toUpperCase()+fmt.slice(1);
+  document.getElementById('dayPanelContext').textContent = week ? (week.topic+' · phase '+week.phase) : 'Hors periode d\'etude';
+  document.getElementById('dayHours').value = log.hours || '';
+  document.getElementById('dayTopics').value = log.topics || '';
+  document.getElementById('daySavedMsg').classList.remove('show');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function closeDayPanel(){
+  selectedDay = null;
+  const panel = document.getElementById('dayPanel');
+  if(panel) panel.style.display='none';
+}
+function saveDayLog(){
+  if(!selectedDay) return;
+  const hoursInput = document.getElementById('dayHours');
+  const topicsInput = document.getElementById('dayTopics');
+  const hours = Number(hoursInput.value)||0;
+  const topics = topicsInput.value||'';
+  if(hours<=0 && !topics.trim()){
+    delete state.dayLogs[selectedDay];
+  } else {
+    state.dayLogs[selectedDay] = {hours: hours, topics: topics};
+  }
+  saveState();
+  renderHeader(); renderLedger(); renderWeeks(); renderCalendar();
+  const msg = document.getElementById('daySavedMsg');
+  if(msg){
+    msg.classList.add('show');
+    setTimeout(function(){ msg.classList.remove('show'); }, 1600);
+  }
+}
+function initCalendarNav(){
+  const prev = document.getElementById('calPrev');
+  const next = document.getElementById('calNext');
+  const close = document.getElementById('dayPanelClose');
+  const save = document.getElementById('daySave');
+  if(prev) prev.addEventListener('click', function(){
+    if(calMonthIdx>0){ calMonthIdx--; closeDayPanel(); renderCalendar(); }
+  });
+  if(next) next.addEventListener('click', function(){
+    if(calMonthIdx<CAL_MONTHS.length-1){ calMonthIdx++; closeDayPanel(); renderCalendar(); }
+  });
+  if(close) close.addEventListener('click', closeDayPanel);
+  if(save) save.addEventListener('click', saveDayLog);
+}
+
+function render(initial){
+  renderHeader();
+  renderLedger();
+  renderWeeks();
+  renderTopics();
+  renderDonut();
+  renderCalendar();
+  if(initial) initTilt();
+}
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  if(confirm('Reinitialiser tout le suivi (heures, LM, semaines) ?')){
+    state = { dayLogs:{}, weekDone:{}, lmChecked:{} };
+    saveState(); render();
+  }
+});
+
+initCalendarNav();
+loadState();
+</script>
+</body>
+</html>
