@@ -20,7 +20,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:30px 18px}
 .hdr{text-align:center;margin-bottom:40px}
 /* DRIVE */
-.drive-bar{display:flex;justify-content:flex-end;margin-bottom:18px}
+.drive-bar{display:flex;align-items:center;gap:14px;justify-content:flex-end;margin-bottom:18px}
 .btn-drive{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;border:1px solid rgba(201,168,76,.25);background:transparent;color:#94a3b8;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
 .btn-drive:hover{border-color:var(--gold);color:var(--gold)}
 .btn-drive.connected{border-color:rgba(34,197,94,.4);color:#22c55e}
@@ -215,6 +215,49 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* Vignette info badge in review */
 .vig-badge{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);background:var(--golddim);border:1px solid rgba(201,168,76,.3);padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
 @media(max-width:600px){.stats,.rstats{grid-template-columns:1fr 1fr}.sess-grid{grid-template-columns:1fr!important}.card{padding:20px 14px}.mock-grid{grid-template-columns:1fr 1fr}}
+
+/* ====== GLOBAL STUDY CHRONO ====== */
+.gchrono-widget{display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 28px;margin:0 0 22px;box-shadow:0 2px 16px rgba(0,0,0,.18)}
+.gchrono-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dim)}
+.gchrono-time{font-family:'DM Mono',monospace;font-size:2.4rem;font-weight:500;color:var(--gold2);letter-spacing:.08em;line-height:1;transition:color .3s}
+.gchrono-time.running{color:var(--green)}
+.gchrono-controls{display:flex;gap:10px;align-items:center;margin-top:2px}
+.btn-gchrono-toggle{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--dim);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:8px 20px;border-radius:7px;cursor:pointer;transition:all .18s;min-width:110px}
+.btn-gchrono-toggle:hover{color:var(--gold);border-color:var(--gold)}
+.btn-gchrono-toggle.running{color:var(--green);border-color:rgba(34,197,94,.4)}
+.btn-gchrono-reset{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--dim);font-family:'DM Mono',monospace;font-size:14px;width:34px;height:34px;border-radius:7px;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-gchrono-reset:hover{color:var(--red);border-color:rgba(239,68,68,.5)}
+.btn-gchrono-reset.confirm{color:var(--red);border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.09);font-size:10px;letter-spacing:.03em;width:auto;padding:0 10px}
+.gchrono-mini{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:1px;opacity:.75;transition:color .3s,opacity .3s}
+.gchrono-mini.running{color:var(--green);opacity:1}
+.gchrono-mini .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ====== GLOBAL CHRONO HISTORY (history screen) ====== */
+.gchrono-hist-section{margin-top:22px}
+.gchrono-sync-note{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.5px;display:flex;align-items:center;gap:6px;margin-bottom:16px;opacity:.75}
+.gchrono-sync-note .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.gchrono-filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.gchrono-filter-btn{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--dim);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.5px;padding:7px 16px;border-radius:20px;cursor:pointer;transition:all .18s}
+.gchrono-filter-btn:hover{color:var(--gold);border-color:var(--gold)}
+.gchrono-filter-btn.active{color:#0d1117;background:var(--gold);border-color:var(--gold);font-weight:600}
+.gchrono-total-card{background:var(--navy2);border:1px solid var(--border);border-radius:12px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.gchrono-total-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.gchrono-total-value{font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;color:var(--gold2);letter-spacing:.05em}
+.gchrono-day-group{background:var(--navy2);border:1px solid rgba(255,255,255,.06);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.gchrono-day-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;transition:background .15s;gap:10px;flex-wrap:wrap}
+.gchrono-day-head:hover{background:rgba(255,255,255,.02)}
+.gchrono-day-date{font-family:'Playfair Display',serif;font-weight:700;font-size:14px;color:var(--text);display:flex;align-items:center;gap:8px}
+.gchrono-day-date .badge-today{font-family:'DM Mono',monospace;font-size:9px;color:#0d1117;background:var(--gold);padding:2px 8px;border-radius:10px;letter-spacing:1px}
+.gchrono-day-total{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold2);display:flex;align-items:center;gap:8px}
+.gchrono-day-toggle{color:var(--dim);font-size:10px;transition:transform .2s}
+.gchrono-day-toggle.open{transform:rotate(180deg)}
+.gchrono-day-sessions{display:none;border-top:1px solid rgba(255,255,255,.06);padding:4px 16px 10px}
+.gchrono-day-sessions.open{display:block}
+.gchrono-session-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:12px;color:var(--dim);border-bottom:1px dashed rgba(255,255,255,.06)}
+.gchrono-session-row:last-child{border-bottom:none}
+.gchrono-session-row .duration{font-family:'DM Mono',monospace;color:var(--text)}
+.gchrono-session-row .auto-tag{font-family:'DM Mono',monospace;font-size:9px;color:#60a5fa;margin-left:6px;opacity:.85}
+.gchrono-empty{text-align:center;padding:26px 10px;color:var(--dim);font-size:13px}
 </style>
 </head>
 <body>
@@ -225,6 +268,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <p>Item Sets · Vignettes · Chrono · Résultats détaillés</p>
 </div>
 <div class="drive-bar">
+  <span class="gchrono-mini" id="gchronoMini"><span class="dot"></span><span id="gchronoMiniTxt">00:00:00</span></span>
   <button class="btn-drive" id="btnDrive" onclick="driveAction()">
     <div class="drive-dot" id="driveDot"></div>
     <span id="driveBtnLabel">Drive</span>
@@ -234,6 +278,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
 <!-- LIBRARY -->
 <div id="scr-library" class="scr on">
+  <div class="gchrono-widget">
+    <div class="gchrono-label">⏱ Temps de travail total</div>
+    <div class="gchrono-time" id="gchronoDisplay">00:00:00</div>
+    <div class="gchrono-controls">
+      <button class="btn-gchrono-toggle" id="gchronoBtn" onclick="gchronoToggle()">▶ Démarrer</button>
+      <button class="btn-gchrono-reset" id="gchronoResetBtn" onclick="gchronoReset()" title="Remettre à zéro">↺</button>
+    </div>
+  </div>
   <div class="card" style="position:relative">
     <h2>Bibliothèque de Mocks</h2>
     <p class="sub">Sélectionnez un mock pour démarrer · CFA Level II — 22 vignettes · 88 questions par session complète</p>
@@ -392,6 +444,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
     <div id="histList"></div>
     <button class="btn btn-o" onclick="setScreen('library')" style="margin-top:8px">← Retour</button>
+  </div>
+
+  <!-- CHRONO TIME JOURNAL -->
+  <div class="card gchrono-hist-section">
+    <h2 style="margin-bottom:4px">⏱ Journal du temps de travail</h2>
+    <p class="sub" style="margin-bottom:14px">Temps passé sur les mocks, groupé par jour. Sauvegardé en local — résiste aux rafraîchissements et fermetures de page.</p>
+    <div class="gchrono-sync-note"><span class="dot"></span> Sauvegarde automatique toutes les 10s pendant que le chrono tourne</div>
+    <div class="gchrono-filter-row" id="gchronoFilterRow">
+      <button class="gchrono-filter-btn" data-range="1">Aujourd'hui</button>
+      <button class="gchrono-filter-btn active" data-range="7">7 jours</button>
+      <button class="gchrono-filter-btn" data-range="30">30 jours</button>
+      <button class="gchrono-filter-btn" data-range="all">Tout</button>
+    </div>
+    <div class="gchrono-total-card">
+      <div class="gchrono-total-label">Total période</div>
+      <div class="gchrono-total-value" id="gchronoRangeTotal">00:00:00</div>
+    </div>
+    <div id="gchronoHistoryContent"></div>
   </div>
 </div>
 
@@ -3581,7 +3651,7 @@ function deleteAllHistory(){
 let histFilterMock=null, histChart=null;
 function openHistory(mockId){
   histFilterMock=mockId||null;
-  setScreen('history'); renderHistoryScreen();
+  setScreen('history'); renderHistoryScreen(); renderGChronoHistory();
 }
 
 function renderHistoryScreen(){
@@ -3939,11 +4009,299 @@ function driveScheduleSave(){
 }
 
 // ══════════════════════════════════════════════
+// GLOBAL STUDY CHRONO — temps de travail global (persistant + historique)
+// ══════════════════════════════════════════════
+const GCHRONO_LS_KEY = 'SK_CHRONO_V1_TRAINER';
+
+const gStudyChrono = (() => {
+  let elapsed = 0;          // secondes accumulées (toutes sessions passées)
+  let startTs  = null;      // performance.now() au démarrage du tick courant
+  let sessionStartMs = null; // Date.now() au démarrage de la session courante (pour le log)
+  let ticker   = null;
+  let hbTimer  = null;      // heartbeat de sauvegarde
+  let running  = false;
+
+  const now = () => performance.now();
+  const current = () => elapsed + (running ? Math.floor((now() - startTs) / 1000) : 0);
+
+  function fmt(s) {
+    const h   = Math.floor(s / 3600);
+    const m   = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+
+  // ---- Persistance locale ----
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(GCHRONO_LS_KEY);
+      if (!raw) return { totalElapsed: 0, sessions: [], live: null };
+      const data = JSON.parse(raw);
+      return {
+        totalElapsed: typeof data.totalElapsed === 'number' ? data.totalElapsed : 0,
+        sessions: Array.isArray(data.sessions) ? data.sessions : [],
+        live: data.live || null // {start: msEpoch, lastHeartbeat: msEpoch}
+      };
+    } catch(e) { return { totalElapsed: 0, sessions: [], live: null }; }
+  }
+
+  function saveState(patch) {
+    try {
+      const state = loadState();
+      Object.assign(state, patch);
+      localStorage.setItem(GCHRONO_LS_KEY, JSON.stringify(state));
+    } catch(e) { /* quota / storage indisponible : on continue sans persister */ }
+  }
+
+  function logSession(startMs, endMs, auto) {
+    const duration = Math.max(0, Math.round((endMs - startMs) / 1000));
+    if (duration < 1) return;
+    const state = loadState();
+    state.sessions.push({
+      date: new Date(startMs).toISOString().slice(0, 10),
+      start: new Date(startMs).toISOString(),
+      end: new Date(endMs).toISOString(),
+      duration,
+      auto: !!auto
+    });
+    if (state.sessions.length > 10000) state.sessions = state.sessions.slice(-10000);
+    localStorage.setItem(GCHRONO_LS_KEY, JSON.stringify(state));
+  }
+
+  function persistTotal(live) {
+    saveState({ totalElapsed: elapsed, live: live });
+  }
+
+  function render() {
+    const t   = fmt(current());
+    const dsp = document.getElementById('gchronoDisplay');
+    const mni = document.getElementById('gchronoMini');
+    const mniTxt = document.getElementById('gchronoMiniTxt');
+    const btn = document.getElementById('gchronoBtn');
+    if (dsp) { dsp.textContent = t; dsp.classList.toggle('running', running); }
+    if (mniTxt) mniTxt.textContent = t;
+    if (mni) mni.classList.toggle('running', running);
+    if (btn) { btn.textContent = running ? '⏸ Pause' : '▶ Démarrer'; btn.classList.toggle('running', running); }
+  }
+
+  function startHeartbeat() {
+    clearInterval(hbTimer);
+    hbTimer = setInterval(() => {
+      persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+    }, 10000);
+  }
+  function stopHeartbeat() { clearInterval(hbTimer); hbTimer = null; }
+
+  // Récupération après refresh/fermeture non propre : si une session était
+  // en cours (heartbeat présent) au dernier chargement, on récupère le temps
+  // écoulé jusqu'au dernier battement enregistré (perte max ~10s).
+  function recoverOnLoad() {
+    const state = loadState();
+    elapsed = state.totalElapsed || 0;
+    if (state.live && state.live.start && state.live.lastHeartbeat && state.live.lastHeartbeat > state.live.start) {
+      logSession(state.live.start, state.live.lastHeartbeat, true);
+      elapsed += Math.max(0, Math.round((state.live.lastHeartbeat - state.live.start) / 1000));
+    }
+    persistTotal(null);
+    render();
+  }
+
+  // Sauvegarde immédiate quand l'onglet passe en arrière-plan ou se ferme
+  function flushOnHide() {
+    if (running) persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushOnHide(); });
+  window.addEventListener('pagehide', flushOnHide);
+  window.addEventListener('beforeunload', flushOnHide);
+
+  return {
+    start() {
+      if (running) return;
+      startTs = now();
+      sessionStartMs = Date.now();
+      running = true;
+      ticker = setInterval(render, 1000);
+      persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+      startHeartbeat();
+      render();
+    },
+    stop() {
+      if (!running) return;
+      const endMs = Date.now();
+      elapsed += Math.floor((now() - startTs) / 1000);
+      running = false;
+      clearInterval(ticker); ticker = null;
+      stopHeartbeat();
+      logSession(sessionStartMs, endMs, false);
+      persistTotal(null);
+      sessionStartMs = null;
+      render();
+    },
+    toggle()   { running ? this.stop() : this.start(); },
+    reset() {
+      this.stop();
+      elapsed = 0;
+      persistTotal(null); // remet le compteur affiché à zéro, l'historique des sessions est conservé
+      render();
+    },
+    isRunning() { return running; },
+    init()      { recoverOnLoad(); },
+    getSessions(){ return loadState().sessions; },
+    getLive()    { return running ? { start: sessionStartMs, duration: current() - elapsed } : null; }
+  };
+})();
+
+function gchronoToggle() { gStudyChrono.toggle(); }
+let _gRstPending = false, _gRstTimer = null;
+function gchronoReset() {
+  const btn = document.getElementById('gchronoResetBtn');
+  if (!_gRstPending) {
+    _gRstPending = true;
+    if (btn) { btn.textContent = '✓ Sûr ?'; btn.classList.add('confirm'); }
+    _gRstTimer = setTimeout(() => {
+      _gRstPending = false;
+      if (btn) { btn.textContent = '↺'; btn.classList.remove('confirm'); }
+    }, 2500);
+  } else {
+    clearTimeout(_gRstTimer);
+    _gRstPending = false;
+    if (btn) { btn.textContent = '↺'; btn.classList.remove('confirm'); }
+    gStudyChrono.reset();
+  }
+}
+
+// Observer : auto-start quand on entre dans un mock (setup/quiz/résultats/historique), auto-stop à l'accueil
+(function initGChronoObserver() {
+  const WORK_SCREENS = ['scr-setup','scr-quiz','scr-results','scr-history','scr-hreview'];
+
+  function watch(id, cb) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new MutationObserver(muts => {
+      muts.forEach(m => { if (m.attributeName === 'class' && el.classList.contains('on')) cb(); });
+    }).observe(el, { attributes: true });
+  }
+
+  WORK_SCREENS.forEach(id => watch(id, () => { if (!gStudyChrono.isRunning()) gStudyChrono.start(); }));
+  watch('scr-library', () => gStudyChrono.stop());
+})();
+
+// ══════════════════════════════════════════════
+// GLOBAL CHRONO HISTORY — rendu du journal des sessions (écran Historique)
+// ══════════════════════════════════════════════
+let _gChronoRange = '7';
+
+function gchronoFmtDuration(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}min`;
+  return `${m}min`;
+}
+
+function gchronoFmtHMS(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function gchronoFmtClock(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function gchronoFmtDayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function gchronoSetRange(range) {
+  _gChronoRange = range;
+  document.querySelectorAll('.gchrono-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === range);
+  });
+  renderGChronoHistory();
+}
+
+function renderGChronoHistory() {
+  const container = document.getElementById('gchronoHistoryContent');
+  const totalEl = document.getElementById('gchronoRangeTotal');
+  if (!container) return;
+
+  let sessions = gStudyChrono.getSessions().slice();
+  const live = gStudyChrono.getLive();
+  if (live && live.duration > 0) {
+    sessions.push({
+      date: new Date(live.start).toISOString().slice(0, 10),
+      start: new Date(live.start).toISOString(),
+      end: new Date().toISOString(),
+      duration: live.duration,
+      auto: false,
+      inProgress: true
+    });
+  }
+
+  if (_gChronoRange !== 'all') {
+    const days = parseInt(_gChronoRange, 10);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    sessions = sessions.filter(s => s.date >= cutoffStr);
+  }
+
+  if (sessions.length === 0) {
+    container.innerHTML = '<div class="gchrono-empty">Aucune session enregistrée sur cette période.</div>';
+    if (totalEl) totalEl.textContent = '00:00:00';
+    return;
+  }
+
+  const byDay = {};
+  sessions.forEach(s => { (byDay[s.date] = byDay[s.date] || []).push(s); });
+  const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let rangeTotal = 0;
+  const html = days.map(day => {
+    const daySessions = byDay[day].sort((a, b) => a.start.localeCompare(b.start));
+    const dayTotal = daySessions.reduce((sum, s) => sum + s.duration, 0);
+    rangeTotal += dayTotal;
+    const isToday = day === todayStr;
+    const rowsHtml = daySessions.map(s => `
+      <div class="gchrono-session-row">
+        <span>${gchronoFmtClock(s.start)} → ${s.inProgress ? 'en cours' : gchronoFmtClock(s.end)}${s.auto ? '<span class="auto-tag">⟳ récupérée</span>' : ''}${s.inProgress ? '<span class="auto-tag" style="color:var(--green)">● live</span>' : ''}</span>
+        <span class="duration">${gchronoFmtDuration(s.duration)}</span>
+      </div>`).join('');
+    return `
+      <div class="gchrono-day-group">
+        <div class="gchrono-day-head" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.gchrono-day-toggle').classList.toggle('open');">
+          <div class="gchrono-day-date">${gchronoFmtDayLabel(day)} ${isToday ? '<span class="badge-today">Aujourd&#39;hui</span>' : ''}</div>
+          <div class="gchrono-day-total">${gchronoFmtDuration(dayTotal)} <span class="gchrono-day-toggle">▾</span></div>
+        </div>
+        <div class="gchrono-day-sessions">${rowsHtml}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+  if (totalEl) totalEl.textContent = gchronoFmtHMS(rangeTotal);
+}
+
+(function initGChronoFilterRow() {
+  const row = document.getElementById('gchronoFilterRow');
+  if (!row) return;
+  row.addEventListener('click', (e) => {
+    const btn = e.target.closest('.gchrono-filter-btn');
+    if (btn) gchronoSetRange(btn.dataset.range);
+  });
+})();
+
+// ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 loadCorrectionsFromStorage();
 renderLibrary();
 renderResumeBanner();
+gStudyChrono.init();
 </script>
 </body>
 </html>
