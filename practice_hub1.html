@@ -5266,7 +5266,7 @@ const studyChrono = (() => {
       duration,
       auto: !!auto
     });
-    if (state.sessions.length > 800) state.sessions = state.sessions.slice(-800);
+    if (state.sessions.length > 10000) state.sessions = state.sessions.slice(-10000);
     localStorage.setItem(CHRONO_LS_KEY, JSON.stringify(state));
   }
 
