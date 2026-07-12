@@ -832,6 +832,85 @@
   }
   .chrono-mini.running { color: var(--green); opacity: 1; }
 
+  /* ====== CHRONO HISTORY (stats page) ====== */
+  .chrono-history-section { margin-top: 44px; }
+  .chrono-sync-note {
+    font-family: 'DM Mono', monospace; font-size: 0.66rem;
+    color: var(--grey); letter-spacing: 0.03em;
+    display: flex; align-items: center; gap: 6px;
+    margin-top: -4px; margin-bottom: 22px; opacity: 0.75;
+  }
+  .chrono-sync-note .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .chrono-filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .chrono-filter-btn {
+    background: transparent; border: 1px solid var(--grey2);
+    color: var(--grey); font-family: 'DM Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.04em;
+    padding: 7px 16px; border-radius: 20px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .chrono-filter-btn:hover { color: var(--gold); border-color: var(--gold); }
+  .chrono-filter-btn.active { color: var(--navy); background: var(--gold); border-color: var(--gold); font-weight: 500; }
+  .chrono-total-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; flex-wrap: wrap; gap: 10px;
+  }
+  .chrono-total-label {
+    font-family: 'DM Mono', monospace; font-size: 0.64rem;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--grey);
+  }
+  .chrono-total-value {
+    font-family: 'DM Mono', monospace; font-size: 1.5rem;
+    font-weight: 500; color: var(--gold2); letter-spacing: 0.06em;
+  }
+  .chrono-day-group {
+    background: var(--card); border: 1px solid var(--border2);
+    border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+  }
+  .chrono-day-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; transition: background 0.15s;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .chrono-day-head:hover { background: rgba(255,255,255,0.02); }
+  .chrono-day-date {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.92rem;
+    color: var(--white); display: flex; align-items: center; gap: 8px;
+  }
+  .chrono-day-date .badge-today {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    color: var(--navy); background: var(--gold);
+    padding: 2px 8px; border-radius: 10px; letter-spacing: 0.05em;
+  }
+  .chrono-day-total {
+    font-family: 'DM Mono', monospace; font-size: 0.88rem;
+    color: var(--gold2); display: flex; align-items: center; gap: 8px;
+  }
+  .chrono-day-toggle { color: var(--grey); font-size: 0.7rem; transition: transform 0.2s; }
+  .chrono-day-toggle.open { transform: rotate(180deg); }
+  .chrono-day-sessions {
+    display: none; border-top: 1px solid var(--border2);
+    padding: 4px 18px 12px;
+  }
+  .chrono-day-sessions.open { display: block; }
+  .chrono-session-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; font-size: 0.78rem; color: var(--grey);
+    border-bottom: 1px dashed var(--border2);
+  }
+  .chrono-session-row:last-child { border-bottom: none; }
+  .chrono-session-row .duration { font-family: 'DM Mono', monospace; color: var(--white); }
+  .chrono-session-row .auto-tag {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    color: var(--blue); margin-left: 6px; opacity: 0.85;
+  }
+  .chrono-empty {
+    text-align: center; padding: 30px 10px; color: var(--grey);
+    font-size: 0.85rem;
+  }
+
 </style>
 </head>
 <body>
@@ -1013,6 +1092,27 @@
   </div>
 
   <div id="statsContent"></div>
+
+  <!-- ===================== CHRONO HISTORY ===================== -->
+  <div class="chrono-history-section">
+    <div class="stats-header">
+      <div class="stats-eyebrow">⏱ Temps de travail · Journal</div>
+      <div class="stats-title">Historique des sessions</div>
+      <div class="stats-desc">Temps de travail enregistré à chaque session, groupé par jour. Sauvegardé en local sur cet appareil — résiste aux rafraîchissements et fermetures de page.</div>
+    </div>
+    <div class="chrono-sync-note"><span class="dot"></span> Sauvegarde automatique toutes les 10s pendant que le chrono tourne</div>
+    <div class="chrono-filter-row" id="chronoFilterRow">
+      <button class="chrono-filter-btn" data-range="1">Aujourd'hui</button>
+      <button class="chrono-filter-btn active" data-range="7">7 jours</button>
+      <button class="chrono-filter-btn" data-range="30">30 jours</button>
+      <button class="chrono-filter-btn" data-range="all">Tout</button>
+    </div>
+    <div class="chrono-total-card">
+      <div class="chrono-total-label">Total période</div>
+      <div class="chrono-total-value" id="chronoRangeTotal">00:00:00</div>
+    </div>
+    <div id="chronoHistoryContent"></div>
+  </div>
 </div>
 
 <script>
@@ -3222,7 +3322,7 @@ function goTopic() {
   document.getElementById('btnPause').classList.remove('show');
   openTopicPage(currentTopic?.id);
 }
-function goStats() { stopTimer(); showScreen('stats'); buildStats(); }
+function goStats() { stopTimer(); showScreen('stats'); buildStats(); renderChronoHistory(); }
 function showResults() { showScreen('results'); buildResults(); }
 function showReview() { showScreen('review'); buildReview(); }
 
@@ -3542,12 +3642,16 @@ function driveScheduleSave() {
 
 
 // ================================================================
-// STUDY CHRONO — temps de travail global
+// STUDY CHRONO — temps de travail global (persistant + historique)
 // ================================================================
+const CHRONO_LS_KEY = 'SK_CHRONO_V1';
+
 const studyChrono = (() => {
-  let elapsed = 0;     // secondes accumulées
-  let startTs  = null; // timestamp de démarrage du tick courant
+  let elapsed = 0;          // secondes accumulées (toutes sessions passées)
+  let startTs  = null;      // performance.now() au démarrage du tick courant
+  let sessionStartMs = null; // Date.now() au démarrage de la session courante (pour le log)
   let ticker   = null;
+  let hbTimer  = null;      // heartbeat de sauvegarde
   let running  = false;
 
   const now = () => performance.now();
@@ -3560,6 +3664,47 @@ const studyChrono = (() => {
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
   }
 
+  // ---- Persistance locale ----
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(CHRONO_LS_KEY);
+      if (!raw) return { totalElapsed: 0, sessions: [], live: null };
+      const data = JSON.parse(raw);
+      return {
+        totalElapsed: typeof data.totalElapsed === 'number' ? data.totalElapsed : 0,
+        sessions: Array.isArray(data.sessions) ? data.sessions : [],
+        live: data.live || null // {start: msEpoch, lastHeartbeat: msEpoch}
+      };
+    } catch(e) { return { totalElapsed: 0, sessions: [], live: null }; }
+  }
+
+  function saveState(patch) {
+    try {
+      const state = loadState();
+      Object.assign(state, patch);
+      localStorage.setItem(CHRONO_LS_KEY, JSON.stringify(state));
+    } catch(e) { /* quota / storage indisponible : on continue sans persister */ }
+  }
+
+  function logSession(startMs, endMs, auto) {
+    const duration = Math.max(0, Math.round((endMs - startMs) / 1000));
+    if (duration < 1) return;
+    const state = loadState();
+    state.sessions.push({
+      date: new Date(startMs).toISOString().slice(0, 10),
+      start: new Date(startMs).toISOString(),
+      end: new Date(endMs).toISOString(),
+      duration,
+      auto: !!auto
+    });
+    if (state.sessions.length > 10000) state.sessions = state.sessions.slice(-10000);
+    localStorage.setItem(CHRONO_LS_KEY, JSON.stringify(state));
+  }
+
+  function persistTotal(live) {
+    saveState({ totalElapsed: elapsed, live: live });
+  }
+
   function render() {
     const t   = fmt(current());
     const dsp = document.getElementById('chronoDisplay');
@@ -3570,12 +3715,70 @@ const studyChrono = (() => {
     if (btn) { btn.textContent = running ? '⏸ Pause' : '▶ Démarrer'; btn.classList.toggle('running', running); }
   }
 
+  function startHeartbeat() {
+    clearInterval(hbTimer);
+    hbTimer = setInterval(() => {
+      persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+    }, 10000);
+  }
+  function stopHeartbeat() { clearInterval(hbTimer); hbTimer = null; }
+
+  // Récupération après refresh/fermeture non propre : si une session était
+  // en cours (heartbeat présent) au dernier chargement, on récupère le temps
+  // écoulé jusqu'au dernier battement enregistré (perte max ~10s).
+  function recoverOnLoad() {
+    const state = loadState();
+    elapsed = state.totalElapsed || 0;
+    if (state.live && state.live.start && state.live.lastHeartbeat && state.live.lastHeartbeat > state.live.start) {
+      logSession(state.live.start, state.live.lastHeartbeat, true);
+      elapsed += Math.max(0, Math.round((state.live.lastHeartbeat - state.live.start) / 1000));
+    }
+    persistTotal(null);
+    render();
+  }
+
+  // Sauvegarde immédiate quand l'onglet passe en arrière-plan ou se ferme
+  function flushOnHide() {
+    if (running) persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushOnHide(); });
+  window.addEventListener('pagehide', flushOnHide);
+  window.addEventListener('beforeunload', flushOnHide);
+
   return {
-    start()    { if (running) return; startTs = now(); running = true;  ticker = setInterval(render, 1000); render(); },
-    stop()     { if (!running) return; elapsed += Math.floor((now() - startTs) / 1000); running = false; clearInterval(ticker); ticker = null; render(); },
+    start() {
+      if (running) return;
+      startTs = now();
+      sessionStartMs = Date.now();
+      running = true;
+      ticker = setInterval(render, 1000);
+      persistTotal({ start: sessionStartMs, lastHeartbeat: Date.now() });
+      startHeartbeat();
+      render();
+    },
+    stop() {
+      if (!running) return;
+      const endMs = Date.now();
+      elapsed += Math.floor((now() - startTs) / 1000);
+      running = false;
+      clearInterval(ticker); ticker = null;
+      stopHeartbeat();
+      logSession(sessionStartMs, endMs, false);
+      persistTotal(null);
+      sessionStartMs = null;
+      render();
+    },
     toggle()   { running ? this.stop() : this.start(); },
-    reset()    { this.stop(); elapsed = 0; render(); },
-    isRunning(){ return running; }
+    reset() {
+      this.stop();
+      elapsed = 0;
+      persistTotal(null); // remet le compteur affiché à zéro, l'historique des sessions est conservé
+      render();
+    },
+    isRunning() { return running; },
+    init()      { recoverOnLoad(); },
+    getSessions(){ return loadState().sessions; },
+    getLive()    { return running ? { start: sessionStartMs, duration: current() - elapsed } : null; }
   };
 })();
 
@@ -3615,8 +3818,118 @@ function chronoReset() {
 })();
 
 // ================================================================
+// CHRONO HISTORY — rendu du journal des sessions (page Stats)
+// ================================================================
+let _chronoRange = '7';
+
+function chronoFmtDuration(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}min`;
+  return `${m}min`;
+}
+
+function chronoFmtHMS(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function chronoFmtClock(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function chronoFmtDayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function chronoSetRange(range) {
+  _chronoRange = range;
+  document.querySelectorAll('.chrono-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === range);
+  });
+  renderChronoHistory();
+}
+
+function renderChronoHistory() {
+  const container = document.getElementById('chronoHistoryContent');
+  const totalEl = document.getElementById('chronoRangeTotal');
+  if (!container) return;
+
+  let sessions = studyChrono.getSessions().slice();
+  const live = studyChrono.getLive();
+  if (live && live.duration > 0) {
+    sessions.push({
+      date: new Date(live.start).toISOString().slice(0, 10),
+      start: new Date(live.start).toISOString(),
+      end: new Date().toISOString(),
+      duration: live.duration,
+      auto: false,
+      inProgress: true
+    });
+  }
+
+  if (_chronoRange !== 'all') {
+    const days = parseInt(_chronoRange, 10);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    sessions = sessions.filter(s => s.date >= cutoffStr);
+  }
+
+  if (sessions.length === 0) {
+    container.innerHTML = '<div class="chrono-empty">Aucune session enregistrée sur cette période.</div>';
+    if (totalEl) totalEl.textContent = '00:00:00';
+    return;
+  }
+
+  const byDay = {};
+  sessions.forEach(s => { (byDay[s.date] = byDay[s.date] || []).push(s); });
+  const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let rangeTotal = 0;
+  const html = days.map(day => {
+    const daySessions = byDay[day].sort((a, b) => a.start.localeCompare(b.start));
+    const dayTotal = daySessions.reduce((sum, s) => sum + s.duration, 0);
+    rangeTotal += dayTotal;
+    const isToday = day === todayStr;
+    const rowsHtml = daySessions.map(s => `
+      <div class="chrono-session-row">
+        <span>${chronoFmtClock(s.start)} → ${s.inProgress ? 'en cours' : chronoFmtClock(s.end)}${s.auto ? '<span class="auto-tag">⟳ récupérée</span>' : ''}${s.inProgress ? '<span class="auto-tag" style="color:var(--green)">● live</span>' : ''}</span>
+        <span class="duration">${chronoFmtDuration(s.duration)}</span>
+      </div>`).join('');
+    return `
+      <div class="chrono-day-group">
+        <div class="chrono-day-head" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.chrono-day-toggle').classList.toggle('open');">
+          <div class="chrono-day-date">${chronoFmtDayLabel(day)} ${isToday ? '<span class="badge-today">Aujourd&#39;hui</span>' : ''}</div>
+          <div class="chrono-day-total">${chronoFmtDuration(dayTotal)} <span class="chrono-day-toggle">▾</span></div>
+        </div>
+        <div class="chrono-day-sessions">${rowsHtml}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+  if (totalEl) totalEl.textContent = chronoFmtHMS(rangeTotal);
+}
+
+(function initChronoFilterRow() {
+  const row = document.getElementById('chronoFilterRow');
+  if (!row) return;
+  row.addEventListener('click', (e) => {
+    const btn = e.target.closest('.chrono-filter-btn');
+    if (btn) chronoSetRange(btn.dataset.range);
+  });
+})();
+
+// ================================================================
 // INIT
 // ================================================================
+studyChrono.init();
 buildHome();
 </script>
 </body>
