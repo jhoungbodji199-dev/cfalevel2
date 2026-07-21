@@ -8,28 +8,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0b1420;
-    --ink-2:#121e30;
-    --ink-3:#1a2a41;
-    --ink-4:#213656;
-    --line: rgba(201,164,92,0.16);
-    --line-strong: rgba(201,164,92,0.35);
-    --gold:#c9a45c;
-    --gold-soft:#e3c98a;
-    --text:#eae4d4;
-    --text-dim:#94a1b9;
-    --text-faint:#5c6a83;
-    --contenu: #4f7d9c;
-    --vacances: #8a6ea8;
-    --mocks: #c9a45c;
-    --done: #6f9c7c;
+    --ink:#f7f3e9;
+    --ink-2:#ffffff;
+    --ink-3:#fbf8f1;
+    --ink-4:#efe6d0;
+    --line: rgba(120,90,30,0.14);
+    --line-strong: rgba(120,90,30,0.30);
+    --gold:#a3742c;
+    --gold-soft:#8a5f22;
+    --text:#241d10;
+    --text-dim:#5c5340;
+    --text-faint:#8c8367;
+    --contenu: #2f6690;
+    --vacances: #6a4a86;
+    --mocks: #a3742c;
+    --done: #3f8a52;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     background:
-      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(79,125,156,0.15), transparent),
-      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(201,164,92,0.08), transparent),
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(47,102,144,0.08), transparent),
+      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(163,116,44,0.07), transparent),
       var(--ink);
     color:var(--text);
     font-family:'Inter',sans-serif;
@@ -148,6 +148,47 @@
     font-size:13px;
     margin-bottom:18px;
   }
+  .section-title-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .today-btn{
+    background:linear-gradient(155deg, var(--ink-3), var(--ink-2));
+    border:1px solid var(--line-strong);
+    color:var(--gold-soft);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:8px 14px;
+    border-radius:20px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:.2s;
+  }
+  .today-btn:hover{border-color:var(--gold); transform:translateY(-1px); box-shadow:0 8px 18px -10px rgba(201,164,92,0.5);}
+  .week.is-current{
+    border-color:var(--gold);
+    box-shadow:0 0 0 1px var(--gold), 0 10px 24px -14px rgba(201,164,92,0.45);
+  }
+  .week.is-current .week-id{color:var(--gold-soft);}
+  .week-current-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink);
+    background:var(--gold-soft);
+    padding:2px 7px;
+    border-radius:20px;
+    margin-left:8px;
+  }
+  @keyframes pulseHighlight{
+    0%{box-shadow:0 0 0 0 rgba(201,164,92,0.55);}
+    100%{box-shadow:0 0 0 14px rgba(201,164,92,0);}
+  }
+  .week.just-jumped{animation:pulseHighlight 1s ease-out 2;}
 
   .ledger{
     display:flex;
@@ -199,7 +240,7 @@
     margin-bottom:44px;
   }
   .donut-wrap{position:relative;}
-  #donutTooltip{
+  .chart-tooltip{
     position:fixed;
     pointer-events:none;
     background:var(--ink-4);
@@ -214,7 +255,7 @@
     z-index:50;
     white-space:nowrap;
   }
-  #donutTooltip .tt-name{color:var(--gold-soft); font-family:'Inter',sans-serif; font-weight:600; margin-bottom:2px;}
+  .chart-tooltip .tt-name{color:var(--gold-soft); font-family:'Inter',sans-serif; font-weight:600; margin-bottom:2px;}
   .donut-center-label{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
     text-align:center; pointer-events:none;
@@ -228,6 +269,12 @@
   }
   .donut-legend-item:hover{background:var(--ink-3); color:var(--text);}
   .donut-legend-item .sw{width:9px;height:9px;border-radius:50%;flex:none;}
+  .donut-empty-note{
+    color:var(--text-faint);
+    font-size:13px;
+    line-height:1.5;
+    max-width:320px;
+  }
   .donut-legend-item .q{margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint);}
   path.slice{transition:transform .15s ease, opacity .15s; transform-origin:100px 100px; cursor:pointer;}
   path.slice:hover{transform:scale(1.045); filter:brightness(1.15);}
@@ -363,7 +410,7 @@
   .dp-field input:focus, .dp-field textarea:focus, .dp-field select:focus{outline:none;border-color:var(--gold);}
   .dp-save{
     background:linear-gradient(135deg,var(--gold-soft),var(--gold));
-    color:#1a1204;
+    color:#fbf6ec;
     border:none;
     padding:9px 20px;
     border-radius:20px;
@@ -416,9 +463,9 @@
     position:relative;
     top:-1px;
   }
-  .phase-tag.contenu{background:rgba(79,125,156,.22);color:#8fb6d4;}
-  .phase-tag.vacances{background:rgba(138,110,168,.25);color:#c3aede;}
-  .phase-tag.mocks{background:rgba(201,164,92,.22);color:var(--gold-soft);}
+  .phase-tag.contenu{background:rgba(47,102,144,.14);color:#2a5878;}
+  .phase-tag.vacances{background:rgba(106,74,134,.14);color:#5c3f74;}
+  .phase-tag.mocks{background:rgba(163,116,44,.14);color:var(--gold-soft);}
   .hours-input{
     display:flex;align-items:center;gap:6px;
     font-family:'IBM Plex Mono',monospace;
@@ -494,7 +541,7 @@
     padding:16px 18px;
   }
   .ss-num{font-family:'IBM Plex Mono',monospace; font-size:22px; color:var(--gold-soft);}
-  .ss-num.behind{color:#f4736a;}
+  .ss-num.behind{color:#b8402f;}
   .ss-num.ahead{color:var(--done);}
   .ss-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
 
@@ -528,7 +575,7 @@
   }
   .domaine-status.ok{background:rgba(111,156,124,.18);color:var(--done);}
   .domaine-status.ontime{background:rgba(201,164,92,.16);color:var(--gold-soft);}
-  .domaine-status.behind{background:rgba(244,115,106,.15);color:#f4736a;}
+  .domaine-status.behind{background:rgba(184,64,47,.12);color:#b8402f;}
   .stats-legend{
     display:flex;gap:22px;flex-wrap:wrap;
     font-size:11.5px;color:var(--text-faint);
@@ -544,7 +591,7 @@
     display:flex;align-items:center;gap:10px;
     padding:8px 18px;
     font-size:13px;color:var(--text-dim);
-    border-bottom:1px solid rgba(255,255,255,0.03);
+    border-bottom:1px solid rgba(36,29,16,0.06);
   }
   .sub-row:last-child{border-bottom:none;}
   .sub-row .sr-name{flex:1;}
@@ -616,7 +663,7 @@
     padding:8px 0;
     font-size:13.5px;
     color:var(--text-dim);
-    border-bottom:1px solid rgba(255,255,255,0.03);
+    border-bottom:1px solid rgba(36,29,16,0.06);
   }
   .lm-item:last-child{border-bottom:none;}
   .lm-check{
@@ -648,7 +695,7 @@
     font-family:'Inter',sans-serif;
     transition:.2s;
   }
-  .reset-btn:hover{border-color:#c17a68;color:#e0968a;}
+  .reset-btn:hover{border-color:#a3543f;color:#8a4432;}
 
   @media (max-width:640px){
     .week{grid-template-columns:1fr;gap:10px;}
@@ -714,7 +761,7 @@
     </div>
     <div class="donut-legend" id="donutLegend"></div>
   </div>
-  <div id="donutTooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
+  <div id="donutTooltip" class="chart-tooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
 
   <div class="section-title">Calendrier</div>
   <div class="section-sub">Clique un jour pour enregistrer le temps passé et le sujet travaillé ce jour-là</div>
@@ -761,11 +808,16 @@
   </div>
 
   <div class="note">
-    Semaines 9–10 (7–20 sept.) : vacances intégrées. Derivatives est traité en léger le soir pendant le séjour, la fin du sujet + Alternative Investments sont repris au retour. Le déficit d'heures est absorbé par la marge du plan — un rattrapage ciblé sur ces deux thèmes est prévu semaine 18, en phase mocks.
+    Semaines 9–10 (7–20 sept.) : vacances intégrées. La fin de Portfolio Management est traitée en léger le soir pendant le séjour, Derivatives démarre en douceur au retour puis s'achève semaine 11 avec l'intro d'Alternative Investments. Le déficit d'heures est absorbé par la marge du plan — un rattrapage ciblé sur ces thèmes est prévu semaine 18, en phase mocks.
   </div>
 
-  <div class="section-title">Semaines</div>
-  <div class="section-sub">Heures loguées (calculées depuis le calendrier) — coche quand la semaine est bouclée</div>
+  <div class="section-title-row">
+    <div>
+      <div class="section-title">Semaines</div>
+      <div class="section-sub">Heures loguées (calculées depuis le calendrier) — coche quand la semaine est bouclée</div>
+    </div>
+    <button class="today-btn" id="jumpTodayBtn" type="button">📍 Aujourd'hui</button>
+  </div>
   <div id="weeksList"></div>
 
   <div class="topics">
@@ -777,6 +829,20 @@
   </div>
 
   <div id="viewStats" class="view">
+    <div class="section-title">Répartition réelle du temps étudié</div>
+    <div class="section-sub">Se remplit au fur et à mesure que tu logues des heures par chapitre dans le calendrier</div>
+    <div class="donut-section" id="hoursDonutSection">
+      <div class="donut-wrap">
+        <svg id="hoursDonutSvg" viewBox="0 0 200 200" width="200" height="200"></svg>
+        <div class="donut-center-label">
+          <div class="n" id="hoursDonutTotal">0h</div>
+          <div class="l">loguées</div>
+        </div>
+      </div>
+      <div class="donut-legend" id="hoursDonutLegend"></div>
+    </div>
+    <div id="hoursDonutTooltip" class="chart-tooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
+
     <div class="section-title">Prévisionnel vs réel</div>
     <div class="section-sub">Basé sur les heures enregistrées jour par jour dans le calendrier, sommées par sous-domaine puis par domaine</div>
     <div id="statsSummary"></div>
@@ -941,28 +1007,43 @@ async function loadFromDrive(){
 })();
 
 const WEEKS = [
-  {id:'w1',  start:'2026-07-13', end:'2026-07-19', range:'13-19 juil.',        phase:'contenu',  topic:'Quantitative Methods',                                   target:21},
-  {id:'w2',  start:'2026-07-20', end:'2026-07-26', range:'20-26 juil.',        phase:'contenu',  topic:'FSA (1/2)',                                              target:18},
-  {id:'w3',  start:'2026-07-27', end:'2026-08-02', range:'27 juil.-2 aout',    phase:'contenu',  topic:'FSA (2/2)',                                              target:17},
-  {id:'w4',  start:'2026-08-03', end:'2026-08-09', range:'3-9 aout',           phase:'contenu',  topic:'Corporate Issuers',                                      target:21},
-  {id:'w5',  start:'2026-08-10', end:'2026-08-16', range:'10-16 aout',         phase:'contenu',  topic:'Equity Valuation (1/2)',                                 target:18},
-  {id:'w6',  start:'2026-08-17', end:'2026-08-23', range:'17-23 aout',         phase:'contenu',  topic:'Equity Valuation (2/2)',                                 target:17},
-  {id:'w7',  start:'2026-08-24', end:'2026-08-30', range:'24-30 aout',         phase:'contenu',  topic:'Fixed Income (1/2)',                                     target:18},
-  {id:'w8',  start:'2026-08-31', end:'2026-09-06', range:'31 aout-6 sept.',    phase:'contenu',  topic:'Fixed Income (2/2)',                                     target:17},
-  {id:'w9',  start:'2026-09-07', end:'2026-09-13', range:'7-13 sept.',         phase:'vacances', topic:'Derivatives - leger (soirees, vacances)',                target:10},
-  {id:'w10', start:'2026-09-14', end:'2026-09-20', range:'14-20 sept.',        phase:'vacances', topic:'Derivatives (fin) + Alt. Investments (intro)',           target:18},
-  {id:'w11', start:'2026-09-21', end:'2026-09-27', range:'21-27 sept.',        phase:'contenu',  topic:'Alternative Investments (fin + rattrapage)',             target:21},
-  {id:'w12', start:'2026-09-28', end:'2026-10-04', range:'28 sept.-4 oct.',    phase:'contenu',  topic:'Portfolio Management (1/2)',                             target:18},
-  {id:'w13', start:'2026-10-05', end:'2026-10-11', range:'5-11 oct.',          phase:'contenu',  topic:'Portfolio Management (2/2)',                             target:17},
-  {id:'w14', start:'2026-10-12', end:'2026-10-18', range:'12-18 oct.',         phase:'contenu',  topic:'Economics',                                              target:21},
-  {id:'w15', start:'2026-10-19', end:'2026-10-25', range:'19-25 oct.',         phase:'mocks',    topic:'Ethics - 1er passage complet',                          target:30},
-  {id:'w16', start:'2026-10-26', end:'2026-11-01', range:'26 oct.-1 nov.',     phase:'mocks',    topic:'Mock #1 + revue + drill FSA / Fixed Income',            target:36},
-  {id:'w17', start:'2026-11-02', end:'2026-11-08', range:'2-8 nov.',           phase:'mocks',    topic:'Mock #2 + revue + drill Equity / Portfolio Mgmt',       target:36},
-  {id:'w18', start:'2026-11-09', end:'2026-11-15', range:'9-15 nov.',          phase:'mocks',    topic:'Mock #3 + revue + Ethics 2e passage + drill DER/AI',    target:36},
-  {id:'w19', start:'2026-11-16', end:'2026-11-18', range:'16-18 nov.',         phase:'mocks',    topic:'Revision finale legere',                                 target:12},
+  {id:'w1',  start:'2026-07-13', end:'2026-07-19', range:'13-19 juil.',        phase:'contenu',  topic:'FSA (1/2)',                                              target:23},
+  {id:'w2',  start:'2026-07-20', end:'2026-07-26', range:'20-26 juil.',        phase:'contenu',  topic:'FSA (2/2)',                                              target:23},
+  {id:'w3',  start:'2026-07-27', end:'2026-08-02', range:'27 juil.-2 aout',    phase:'contenu',  topic:'Fixed Income (1/2)',                                     target:23},
+  {id:'w4',  start:'2026-08-03', end:'2026-08-09', range:'3-9 aout',           phase:'contenu',  topic:'Fixed Income (2/2)',                                     target:23},
+  {id:'w5',  start:'2026-08-10', end:'2026-08-16', range:'10-16 aout',         phase:'contenu',  topic:'Quantitative Methods',                                   target:23},
+  {id:'w6',  start:'2026-08-17', end:'2026-08-23', range:'17-23 aout',         phase:'contenu',  topic:'Equity Valuation (1/2)',                                 target:26},
+  {id:'w7',  start:'2026-08-24', end:'2026-08-30', range:'24-30 aout',         phase:'contenu',  topic:'Equity Valuation (2/2)',                                 target:26},
+  {id:'w8',  start:'2026-08-31', end:'2026-09-06', range:'31 aout-6 sept.',    phase:'contenu',  topic:'Portfolio Management (1/2)',                             target:25},
+  {id:'w9',  start:'2026-09-07', end:'2026-09-13', range:'7-13 sept.',         phase:'vacances', topic:'Portfolio Management (2/2) - leger, vacances',           target:12},
+  {id:'w10', start:'2026-09-14', end:'2026-09-20', range:'14-20 sept.',        phase:'vacances', topic:'Derivatives - leger (retour vacances)',                  target:20},
+  {id:'w11', start:'2026-09-21', end:'2026-09-27', range:'21-27 sept.',        phase:'contenu',  topic:'Derivatives (fin) + Alt. Investments (intro)',           target:25},
+  {id:'w12', start:'2026-09-28', end:'2026-10-04', range:'28 sept.-4 oct.',    phase:'contenu',  topic:'Alt. Investments (fin) + Corporate Issuers (intro)',     target:23},
+  {id:'w13', start:'2026-10-05', end:'2026-10-11', range:'5-11 oct.',          phase:'contenu',  topic:'Corporate Issuers (fin)',                                target:23},
+  {id:'w14', start:'2026-10-12', end:'2026-10-18', range:'12-18 oct.',         phase:'contenu',  topic:'Economics',                                              target:18},
+  {id:'w15', start:'2026-10-19', end:'2026-10-25', range:'19-25 oct.',         phase:'mocks',    topic:'Ethics - 1er passage complet',                          target:34},
+  {id:'w16', start:'2026-10-26', end:'2026-11-01', range:'26 oct.-1 nov.',     phase:'mocks',    topic:'Mock #1 + revue + drill FSA / Fixed Income',            target:42},
+  {id:'w17', start:'2026-11-02', end:'2026-11-08', range:'2-8 nov.',           phase:'mocks',    topic:'Mock #2 + revue + drill Equity / Portfolio Mgmt',       target:42},
+  {id:'w18', start:'2026-11-09', end:'2026-11-15', range:'9-15 nov.',          phase:'mocks',    topic:'Mock #3 + revue + Ethics 2e passage + drill DER/AI',    target:42},
+  {id:'w19', start:'2026-11-16', end:'2026-11-18', range:'16-18 nov.',         phase:'mocks',    topic:'Revision finale legere',                                 target:16},
 ];
 
 const TOPICS = [
+  {id:'fsa', name:'Financial Statement Analysis',       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#f43f5e', lms:[
+    'Intercorporate Investments',
+    'Employee Compensation: Post-Employment and Share-Based',
+    'Multinational Operations',
+    'Analysis of Financial Institutions',
+    'Evaluating Quality of Financial Reports',
+    'Integration of Financial Statement Analysis Techniques'
+  ]},
+  {id:'fi',  name:'Fixed Income',                       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ff7a3d', lms:[
+    'The Term Structure and Interest Rate Dynamics',
+    'The Arbitrage-Free Valuation Framework',
+    'Valuation and Analysis of Bonds with Embedded Options',
+    'Credit Analysis Models',
+    'Credit Default Swaps'
+  ]},
   {id:'qm',  name:'Quantitative Methods',              weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#3ea8ff', lms:[
     'Basics of Multiple Regression and Underlying Assumptions',
     'Evaluating Regression Model Fit and Interpreting Model Results',
@@ -972,24 +1053,6 @@ const TOPICS = [
     'Machine Learning',
     'Big Data Projects'
   ]},
-  {id:'eco', name:'Economics',                          weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#22d3ee', lms:[
-    'Currency Exchange Rates: Understanding Equilibrium Value',
-    'Economic Growth'
-  ]},
-  {id:'fsa', name:'Financial Statement Analysis',       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#f43f5e', lms:[
-    'Intercorporate Investments',
-    'Employee Compensation: Post-Employment and Share-Based',
-    'Multinational Operations',
-    'Analysis of Financial Institutions',
-    'Evaluating Quality of Financial Reports',
-    'Integration of Financial Statement Analysis Techniques'
-  ]},
-  {id:'ci',  name:'Corporate Issuers',                  weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#4ade80', lms:[
-    'Analysis of Dividends and Share Repurchases',
-    'ESG Considerations in Investment Analysis',
-    'Cost of Capital: Advanced Topics',
-    'Corporate Restructuring'
-  ]},
   {id:'ei',  name:'Equity Valuation',                   weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ffd23f', lms:[
     'Equity Valuation: Applications and Processes',
     'Discounted Dividend Valuation',
@@ -998,12 +1061,13 @@ const TOPICS = [
     'Residual Income Valuation',
     'Private Company Valuation'
   ]},
-  {id:'fi',  name:'Fixed Income',                       weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ff7a3d', lms:[
-    'The Term Structure and Interest Rate Dynamics',
-    'The Arbitrage-Free Valuation Framework',
-    'Valuation and Analysis of Bonds with Embedded Options',
-    'Credit Analysis Models',
-    'Credit Default Swaps'
+  {id:'pm',  name:'Portfolio Management',               weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#2ee6a6', lms:[
+    'Economics and Investment Markets',
+    'Analysis of Active Portfolio Management',
+    'Exchange-Traded Funds: Mechanics and Applications',
+    'Using Multifactor Models',
+    'Measuring and Managing Market Risk',
+    'Backtesting and Simulation'
   ]},
   {id:'der', name:'Derivatives',                        weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#8b5cf6', lms:[
     'Pricing and Valuation of Forward Commitments',
@@ -1015,13 +1079,15 @@ const TOPICS = [
     'Investments in Real Estate through Publicly Traded Securities',
     'Hedge Fund Strategies'
   ]},
-  {id:'pm',  name:'Portfolio Management',               weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#2ee6a6', lms:[
-    'Economics and Investment Markets',
-    'Analysis of Active Portfolio Management',
-    'Exchange-Traded Funds: Mechanics and Applications',
-    'Using Multifactor Models',
-    'Measuring and Managing Market Risk',
-    'Backtesting and Simulation'
+  {id:'ci',  name:'Corporate Issuers',                  weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#4ade80', lms:[
+    'Analysis of Dividends and Share Repurchases',
+    'ESG Considerations in Investment Analysis',
+    'Cost of Capital: Advanced Topics',
+    'Corporate Restructuring'
+  ]},
+  {id:'eco', name:'Economics',                          weight:'5-10%',  mid:7.5,  qLo:4, qHi:9,  color:'#22d3ee', lms:[
+    'Currency Exchange Rates: Understanding Equilibrium Value',
+    'Economic Growth'
   ]},
   {id:'eth', name:'Ethical and Professional Standards',  weight:'10-15%', mid:12.5, qLo:9, qHi:13, color:'#ff4fa3', lms:[
     'Code of Ethics and Standards of Professional Conduct',
@@ -1040,14 +1106,14 @@ const EXAM_DATE = new Date('2026-11-18T00:00:00');
    et ne sont donc pas ventilees par domaine, elles comptent seulement dans
    le total global (402h). */
 const PLANNED_BY_TOPIC = {
-  qm:21, eco:21, fsa:35, ci:21, ei:35, fi:35, der:21, ai:21, pm:35, eth:51
+  fsa:46, fi:46, qm:23, ei:52, pm:37, der:23, ai:23, ci:23, eco:18, eth:51
 };
 /* Derniere date du bloc de semaines dedie a chaque domaine dans le planning.
    Avant cette date, ne pas etre a l'objectif est normal (encore du temps).
    Apres cette date, un manque d'heures devient un vrai retard. */
 const DOMAINE_DEADLINE = {
-  qm:'2026-07-19', fsa:'2026-08-02', ci:'2026-08-09', ei:'2026-08-23',
-  fi:'2026-09-06', der:'2026-09-27', ai:'2026-09-27', pm:'2026-10-11',
+  fsa:'2026-07-26', fi:'2026-08-09', qm:'2026-08-16', ei:'2026-08-30',
+  pm:'2026-09-13', der:'2026-09-27', ai:'2026-10-04', ci:'2026-10-11',
   eco:'2026-10-18', eth:'2026-10-25'
 };
 const GENERAL_OPTIONS = [
@@ -1231,17 +1297,19 @@ function renderLedger(){
 function renderWeeks(){
   const el = document.getElementById('weeksList');
   el.innerHTML='';
+  const today = todayISO();
   WEEKS.forEach(function(w,idx){
     const done = !!state.weekDone[w.id];
     const logged = weekHoursFromLogs(w);
+    const isCurrent = today >= w.start && today <= w.end;
     const row = document.createElement('div');
-    row.className = 'week'+(done?' is-done':'');
+    row.className = 'week'+(done?' is-done':'')+(isCurrent?' is-current':'');
     row.id = 'week-'+w.id;
     row.innerHTML =
       '<div class="week-id">S'+(idx+1)+'</div>'+
       '<div class="week-main">'+
         '<div class="week-range">'+w.range+'</div>'+
-        '<div class="week-topic">'+w.topic+'<span class="phase-tag '+w.phase+'">'+w.phase+'</span></div>'+
+        '<div class="week-topic">'+w.topic+'<span class="phase-tag '+w.phase+'">'+w.phase+'</span>'+(isCurrent?'<span class="week-current-tag">en cours</span>':'')+'</div>'+
       '</div>'+
       '<div class="hours-input" title="Renseigne les heures jour par jour dans le calendrier ci-dessus">'+
         '<span style="color:'+(logged>0?'var(--gold-soft)':'var(--text-dim)')+'">'+logged+'</span>'+
@@ -1533,7 +1601,81 @@ function cumulativePlannedToDate(){
   return Math.round(total*10)/10;
 }
 
+function renderHoursDonut(){
+  const svg = document.getElementById('hoursDonutSvg');
+  const legend = document.getElementById('hoursDonutLegend');
+  const totalLabel = document.getElementById('hoursDonutTotal');
+  const tooltip = document.getElementById('hoursDonutTooltip');
+  if(!svg || !legend || !totalLabel || !tooltip) return;
+  svg.innerHTML = '';
+
+  const neutral = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#8c8367';
+
+  const slices = TOPICS.map(function(t){
+    return {id:t.id, name:t.name, color:t.color, hours: actualHoursByDomaine(t.id)};
+  });
+  const generalH = actualHoursGeneral();
+  if(generalH > 0){
+    slices.push({id:'general', name:'Mocks / révision transverse', color:neutral, hours:generalH});
+  }
+  const total = slices.reduce(function(a,s){ return a+s.hours; }, 0);
+  totalLabel.textContent = (Math.round(total*10)/10)+'h';
+
+  if(total <= 0){
+    const track = document.createElementNS('http://www.w3.org/2000/svg','path');
+    track.setAttribute('d', describeArc(100,100,80,50,0,359.99));
+    track.setAttribute('fill', 'var(--ink-3)');
+    svg.appendChild(track);
+    legend.innerHTML = '<div class="donut-empty-note">Aucune heure loguée pour l\'instant — renseigne tes heures dans le calendrier pour voir ce camembert se remplir au fil des semaines.</div>';
+    return;
+  }
+
+  let angle = 0;
+  slices.filter(function(s){ return s.hours > 0; }).forEach(function(s){
+    const sweep = (s.hours/total)*360;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', describeArc(100,100,80,50, angle, angle+Math.max(sweep,0.5)));
+    path.setAttribute('fill', s.color);
+    path.classList.add('slice');
+    path.addEventListener('mousemove', function(e){
+      tooltip.querySelector('.tt-name').textContent = s.name;
+      tooltip.querySelector('.tt-detail').textContent = (Math.round(s.hours*10)/10)+'h - '+Math.round((s.hours/total)*100)+'%';
+      tooltip.style.left = (e.clientX+14)+'px';
+      tooltip.style.top = (e.clientY+10)+'px';
+      tooltip.style.opacity = '1';
+    });
+    path.addEventListener('mouseleave', function(){ tooltip.style.opacity='0'; });
+    if(s.id !== 'general'){
+      path.addEventListener('click', function(){
+        const tabRoute = document.getElementById('tabRoute');
+        if(tabRoute) tabRoute.click();
+        scrollToTopic(s.id);
+      });
+    }
+    svg.appendChild(path);
+    angle += sweep;
+  });
+
+  legend.innerHTML = slices.filter(function(s){ return s.hours > 0; }).map(function(s){
+    const pct = Math.round((s.hours/total)*100);
+    return '<div class="donut-legend-item" data-topic="'+s.id+'">'+
+      '<span class="sw" style="background:'+s.color+'"></span>'+
+      s.name+
+      '<span class="q">'+(Math.round(s.hours*10)/10)+'h · '+pct+'%</span>'+
+    '</div>';
+  }).join('');
+  legend.querySelectorAll('.donut-legend-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      if(item.dataset.topic === 'general') return;
+      const tabRoute = document.getElementById('tabRoute');
+      if(tabRoute) tabRoute.click();
+      scrollToTopic(item.dataset.topic);
+    });
+  });
+}
+
 function renderStats(){
+  renderHoursDonut();
   const summaryEl = document.getElementById('statsSummary');
   const domainesEl = document.getElementById('statsDomaines');
   if(!summaryEl || !domainesEl) return;
@@ -1569,7 +1711,7 @@ function renderStats(){
     if(isDone){
       statusClass='ok'; statusLabel='termine'; barColor='var(--done)';
     } else if(pastDeadline){
-      statusClass='behind'; statusLabel='en retard'; barColor='#f4736a';
+      statusClass='behind'; statusLabel='en retard'; barColor='#b8402f';
     } else {
       statusClass='ontime'; statusLabel='dans les temps'; barColor='var(--gold)';
     }
@@ -1659,8 +1801,32 @@ document.getElementById('resetBtn').addEventListener('click', function(){
   }
 });
 
+function initJumpToday(){
+  const btn = document.getElementById('jumpTodayBtn');
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    const today = todayISO();
+    const w = WEEKS.find(function(w){ return today>=w.start && today<=w.end; });
+    if(!w){
+      const tabRoute = document.getElementById('tabRoute');
+      if(tabRoute) tabRoute.click();
+      alert('Hors periode de plan (avant le debut ou apres la fin).');
+      return;
+    }
+    const tabRoute = document.getElementById('tabRoute');
+    if(tabRoute) tabRoute.click();
+    const row = document.getElementById('week-'+w.id);
+    if(row){
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      row.classList.add('just-jumped');
+      setTimeout(function(){ row.classList.remove('just-jumped'); }, 2000);
+    }
+  });
+}
+
 initCalendarNav();
 initTabs();
+initJumpToday();
 loadState();
 </script>
 </body>
