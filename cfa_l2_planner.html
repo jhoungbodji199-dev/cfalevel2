@@ -357,7 +357,8 @@
   .cal-day.mocks{border-left:3px solid var(--mocks);}
   .cal-day .dnum{font-size:13px; color:var(--text);}
   .cal-day .dhours{font-size:9.5px; color:var(--gold-soft); margin-top:2px;}
-  .cal-day .ddot{width:5px;height:5px;border-radius:50%;position:absolute;top:5px;right:5px;}
+  .cal-day .ddots{position:absolute;top:5px;right:5px;display:flex;gap:2px;}
+  .cal-day .ddot{width:5px;height:5px;border-radius:50%;}
   .cal-day.has-log{background:rgba(99,102,241,.08);}
   .cal-day.is-today{box-shadow:0 0 0 2px var(--gold-soft) inset;}
   .cal-legend-row{
@@ -425,6 +426,58 @@
     font-size:11.5px;color:var(--done);margin-left:12px;opacity:0;transition:opacity .2s;
   }
   .dp-saved-msg.show{opacity:1;}
+
+  .dp-entries{display:flex; flex-direction:column; gap:8px; margin-bottom:10px;}
+  .dp-entry-row{
+    display:grid;
+    grid-template-columns:1fr 74px 26px;
+    gap:8px;
+    align-items:center;
+  }
+  .dp-entry-row select, .dp-entry-row input{
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:8px 9px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    width:100%;
+  }
+  .dp-entry-row input{font-family:'IBM Plex Mono',monospace; text-align:center;}
+  .dp-entry-row select:focus, .dp-entry-row input:focus{outline:none;border-color:var(--gold);}
+  .dp-entry-remove{
+    cursor:pointer;
+    color:var(--text-faint);
+    width:26px;height:26px;
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+    background:none;
+    transition:.15s;
+    font-size:12px;
+  }
+  .dp-entry-remove:hover{color:#b8402f;border-color:#b8402f;}
+  .dp-add{
+    background:none;
+    border:1px dashed var(--line-strong);
+    color:var(--gold-soft);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:12.5px;
+    cursor:pointer;
+    width:100%;
+    margin-bottom:14px;
+    transition:.15s;
+  }
+  .dp-add:hover{border-color:var(--gold); background:rgba(99,102,241,0.06);}
+  .dp-total{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--text);
+    margin-bottom:14px;
+  }
+  .dp-total .n{color:var(--gold-soft); font-weight:600;}
 
   .week{
     border:1px solid var(--line);
@@ -786,14 +839,9 @@
         <span class="dp-close" id="dayPanelClose">✕</span>
       </div>
       <div class="dp-context" id="dayPanelContext"></div>
-      <div class="dp-field">
-        <label>Heures travaillées ce jour</label>
-        <input type="number" id="dayHours" min="0" step="0.5" placeholder="0">
-      </div>
-      <div class="dp-field">
-        <label>Domaine / sous-domaine travaillé</label>
-        <select id="daySubject"></select>
-      </div>
+      <div class="dp-entries" id="dpEntries"></div>
+      <button class="dp-add" id="dpAddEntry" type="button">+ Ajouter un sous-chapitre</button>
+      <div class="dp-total" id="dpTotal">Total du jour : 0h</div>
       <button class="dp-save" id="daySave">Enregistrer</button>
       <span class="dp-saved-msg" id="daySavedMsg">enregistré ✓</span>
     </div>
@@ -1160,15 +1208,23 @@ function subjectLabel(key){
   const parsed = parseLmKey(key);
   return parsed ? (parsed.topic.name+' - '+parsed.lmName) : key;
 }
+function dayTotalHours(iso){
+  const log = state.dayLogs[iso];
+  if(!log || !log.entries) return 0;
+  return log.entries.reduce(function(a,e){ return a + (Number(e.hours)||0); }, 0);
+}
 function actualHoursByLm(){
   const map = {};
   Object.keys(state.dayLogs).forEach(function(d){
     const log = state.dayLogs[d];
-    if(!log || !log.lmKey || isGeneralKey(log.lmKey)) return;
-    const parsed = parseLmKey(log.lmKey);
-    if(!parsed) return;
-    const key = parsed.topic.id+'-'+parsed.lmIndex;
-    map[key] = (map[key]||0) + (Number(log.hours)||0);
+    if(!log || !log.entries) return;
+    log.entries.forEach(function(e){
+      if(!e.lmKey || isGeneralKey(e.lmKey)) return;
+      const parsed = parseLmKey(e.lmKey);
+      if(!parsed) return;
+      const key = parsed.topic.id+'-'+parsed.lmIndex;
+      map[key] = (map[key]||0) + (Number(e.hours)||0);
+    });
   });
   return map;
 }
@@ -1176,7 +1232,10 @@ function actualHoursGeneral(){
   let total = 0;
   Object.keys(state.dayLogs).forEach(function(d){
     const log = state.dayLogs[d];
-    if(log && log.lmKey && isGeneralKey(log.lmKey)){ total += Number(log.hours)||0; }
+    if(!log || !log.entries) return;
+    log.entries.forEach(function(e){
+      if(e.lmKey && isGeneralKey(e.lmKey)){ total += Number(e.hours)||0; }
+    });
   });
   return total;
 }
@@ -1208,8 +1267,21 @@ function hasNativeStorage(){
 }
 function applyLoadedState(raw){
   const parsed = JSON.parse(raw);
+  const rawLogs = parsed.dayLogs || {};
+  const migrated = {};
+  Object.keys(rawLogs).forEach(function(d){
+    const log = rawLogs[d];
+    if(!log) return;
+    if(Array.isArray(log.entries)){
+      const entries = log.entries.filter(function(e){ return e && (Number(e.hours)||0) > 0; });
+      if(entries.length) migrated[d] = {entries: entries};
+    } else if(log.lmKey || log.hours){
+      const hours = Number(log.hours)||0;
+      if(hours > 0 || log.lmKey) migrated[d] = {entries: [{lmKey: log.lmKey||'', hours: hours}]};
+    }
+  });
   state = {
-    dayLogs: parsed.dayLogs || {},
+    dayLogs: migrated,
     weekDone: parsed.weekDone || {},
     lmChecked: parsed.lmChecked || {}
   };
@@ -1247,14 +1319,14 @@ function getWeekForDate(dateStr){
 function weekHoursFromLogs(week){
   let total = 0;
   Object.keys(state.dayLogs).forEach(function(d){
-    if(d >= week.start && d <= week.end){ total += Number(state.dayLogs[d].hours)||0; }
+    if(d >= week.start && d <= week.end){ total += dayTotalHours(d); }
   });
   return total;
 }
 
 function computeStats(){
   let hours=0;
-  Object.keys(state.dayLogs).forEach(function(d){ hours += Number(state.dayLogs[d].hours)||0; });
+  Object.keys(state.dayLogs).forEach(function(d){ hours += dayTotalHours(d); });
   let lmCount=0;
   TOPICS.forEach(t=>{ t.lms.forEach((_,i)=>{ if(state.lmChecked[t.id+'-'+i]) lmCount++; }); });
   let weeksDone = WEEKS.filter(w=>state.weekDone[w.id]).length;
@@ -1517,20 +1589,26 @@ function renderCalendar(){
     const iso = toISO(mo.y, mo.m, d);
     const week = getWeekForDate(iso);
     const log = state.dayLogs[iso];
+    const totalH = dayTotalHours(iso);
     const cell = document.createElement('div');
     let cls = 'cal-day';
     if(!week){ cls += ' out-of-range'; }
     else { cls += ' '+week.phase; }
-    if(log && Number(log.hours)>0){ cls += ' has-log'; monthTotal += Number(log.hours); }
+    if(totalH>0){ cls += ' has-log'; monthTotal += totalH; }
     if(iso===today){ cls += ' is-today'; }
     cell.className = cls;
     let dotHtml = '';
-    if(log && log.lmKey){
-      const parsed = parseLmKey(log.lmKey);
-      if(parsed){ dotHtml = '<span class="ddot" style="background:'+parsed.topic.color+'"></span>'; }
-      else if(isGeneralKey(log.lmKey)){ dotHtml = '<span class="ddot" style="background:var(--text-faint)"></span>'; }
+    if(log && log.entries && log.entries.length){
+      const colors = [];
+      log.entries.forEach(function(e){
+        if(!e.lmKey) return;
+        const parsed = parseLmKey(e.lmKey);
+        const color = parsed ? parsed.topic.color : (isGeneralKey(e.lmKey) ? 'var(--text-faint)' : null);
+        if(color && colors.indexOf(color)===-1) colors.push(color);
+      });
+      dotHtml = colors.length ? ('<div class="ddots">'+colors.slice(0,3).map(function(c){ return '<span class="ddot" style="background:'+c+'"></span>'; }).join('')+'</div>') : '';
     }
-    cell.innerHTML = dotHtml + '<div class="dnum">'+d+'</div>' + (log && Number(log.hours)>0 ? '<div class="dhours">'+log.hours+'h</div>' : '');
+    cell.innerHTML = dotHtml + '<div class="dnum">'+d+'</div>' + (totalH>0 ? '<div class="dhours">'+(Math.round(totalH*10)/10)+'h</div>' : '');
     if(week){
       cell.addEventListener('click', function(){ openDayPanel(iso); });
     }
@@ -1539,19 +1617,47 @@ function renderCalendar(){
   document.getElementById('calMonthTotal').textContent = monthTotal+'h ce mois';
 }
 
+function buildEntryRow(entry){
+  entry = entry || {lmKey:'', hours:''};
+  const row = document.createElement('div');
+  row.className = 'dp-entry-row';
+  row.innerHTML =
+    '<select class="dp-entry-select">'+buildSubjectOptions()+'</select>'+
+    '<input type="number" class="dp-entry-hours" min="0" step="0.5" placeholder="0h">'+
+    '<button type="button" class="dp-entry-remove" title="Retirer ce sous-chapitre">✕</button>';
+  row.querySelector('.dp-entry-select').value = entry.lmKey || '';
+  row.querySelector('.dp-entry-hours').value = entry.hours || '';
+  row.querySelector('.dp-entry-remove').addEventListener('click', function(){
+    const container = document.getElementById('dpEntries');
+    if(container && container.children.length > 1){ row.remove(); }
+    else { row.querySelector('.dp-entry-select').value=''; row.querySelector('.dp-entry-hours').value=''; }
+    updateDpTotal();
+  });
+  row.querySelector('.dp-entry-hours').addEventListener('input', updateDpTotal);
+  return row;
+}
+function updateDpTotal(){
+  const rows = document.querySelectorAll('#dpEntries .dp-entry-row');
+  let total = 0;
+  rows.forEach(function(r){ total += Number(r.querySelector('.dp-entry-hours').value)||0; });
+  const totalEl = document.getElementById('dpTotal');
+  if(totalEl) totalEl.innerHTML = 'Total du jour : <span class="n">'+(Math.round(total*10)/10)+'h</span>';
+}
 function openDayPanel(iso){
   selectedDay = iso;
   const week = getWeekForDate(iso);
   const panel = document.getElementById('dayPanel');
-  const log = state.dayLogs[iso] || {hours:'', lmKey:''};
+  const log = state.dayLogs[iso];
+  const entries = (log && log.entries && log.entries.length) ? log.entries : [{lmKey:'', hours:''}];
   panel.style.display = 'block';
   const dateObj = new Date(iso+'T00:00:00');
   const fmt = dateObj.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
   document.getElementById('dayPanelDate').textContent = fmt.charAt(0).toUpperCase()+fmt.slice(1);
   document.getElementById('dayPanelContext').textContent = week ? ('Prevu cette semaine : '+week.topic+' (phase '+week.phase+')') : 'Hors periode d\'etude';
-  document.getElementById('dayHours').value = log.hours || '';
-  const select = document.getElementById('daySubject');
-  if(select) select.value = log.lmKey || '';
+  const container = document.getElementById('dpEntries');
+  container.innerHTML = '';
+  entries.forEach(function(e){ container.appendChild(buildEntryRow(e)); });
+  updateDpTotal();
   document.getElementById('daySavedMsg').classList.remove('show');
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -1562,14 +1668,17 @@ function closeDayPanel(){
 }
 function saveDayLog(){
   if(!selectedDay) return;
-  const hoursInput = document.getElementById('dayHours');
-  const select = document.getElementById('daySubject');
-  const hours = Number(hoursInput.value)||0;
-  const lmKey = select ? select.value : '';
-  if(hours<=0 && !lmKey){
+  const rows = document.querySelectorAll('#dpEntries .dp-entry-row');
+  const entries = [];
+  rows.forEach(function(r){
+    const lmKey = r.querySelector('.dp-entry-select').value;
+    const hours = Number(r.querySelector('.dp-entry-hours').value)||0;
+    if(lmKey && hours>0){ entries.push({lmKey:lmKey, hours:hours}); }
+  });
+  if(entries.length===0){
     delete state.dayLogs[selectedDay];
   } else {
-    state.dayLogs[selectedDay] = {hours: hours, lmKey: lmKey};
+    state.dayLogs[selectedDay] = {entries: entries};
   }
   saveState();
   render();
@@ -1584,8 +1693,7 @@ function initCalendarNav(){
   const next = document.getElementById('calNext');
   const close = document.getElementById('dayPanelClose');
   const save = document.getElementById('daySave');
-  const select = document.getElementById('daySubject');
-  if(select) select.innerHTML = buildSubjectOptions();
+  const addBtn = document.getElementById('dpAddEntry');
   if(prev) prev.addEventListener('click', function(){
     if(calMonthIdx>0){ calMonthIdx--; closeDayPanel(); renderCalendar(); }
   });
@@ -1594,6 +1702,10 @@ function initCalendarNav(){
   });
   if(close) close.addEventListener('click', closeDayPanel);
   if(save) save.addEventListener('click', saveDayLog);
+  if(addBtn) addBtn.addEventListener('click', function(){
+    const container = document.getElementById('dpEntries');
+    if(container){ container.appendChild(buildEntryRow()); }
+  });
 }
 
 function weekIndexForToday(){
@@ -1650,9 +1762,10 @@ function renderHoursDonut(){
 
   let angle = 0;
   slices.filter(function(s){ return s.hours > 0; }).forEach(function(s){
-    const sweep = (s.hours/total)*360;
+    const rawSweep = (s.hours/total)*360;
+    const sweep = Math.min(Math.max(rawSweep,0.5), 359.9);
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', describeArc(100,100,80,50, angle, angle+Math.max(sweep,0.5)));
+    path.setAttribute('d', describeArc(100,100,80,50, angle, angle+sweep));
     path.setAttribute('fill', s.color);
     path.classList.add('slice');
     path.addEventListener('mousemove', function(e){
