@@ -8,28 +8,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#f7f3e9;
+    --ink:#f5f6fb;
     --ink-2:#ffffff;
-    --ink-3:#fbf8f1;
-    --ink-4:#efe6d0;
-    --line: rgba(120,90,30,0.14);
-    --line-strong: rgba(120,90,30,0.30);
-    --gold:#a3742c;
-    --gold-soft:#8a5f22;
-    --text:#241d10;
-    --text-dim:#5c5340;
-    --text-faint:#8c8367;
-    --contenu: #2f6690;
-    --vacances: #6a4a86;
-    --mocks: #a3742c;
-    --done: #3f8a52;
+    --ink-3:#eef0f8;
+    --ink-4:#1c2033;
+    --line: rgba(28,32,51,0.08);
+    --line-strong: rgba(28,32,51,0.18);
+    --gold:#6366f1;
+    --gold-soft:#4338ca;
+    --text:#12141f;
+    --text-dim:#565f75;
+    --text-faint:#8991a8;
+    --contenu: #2563eb;
+    --vacances: #9333ea;
+    --mocks: #6366f1;
+    --done: #16a34a;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     background:
-      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(47,102,144,0.08), transparent),
-      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(163,116,44,0.07), transparent),
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(99,102,241,0.10), transparent),
+      radial-gradient(ellipse 700px 400px at 90% 10%, rgba(147,51,234,0.08), transparent),
       var(--ink);
     color:var(--text);
     font-family:'Inter',sans-serif;
@@ -134,7 +134,7 @@
     background:linear-gradient(90deg,var(--gold-soft),var(--gold));
     border-radius:4px;
     transition:width .6s cubic-bezier(.2,.8,.2,1);
-    box-shadow:0 0 14px rgba(201,164,92,0.5);
+    box-shadow:0 0 14px rgba(99,102,241,0.5);
   }
 
   .section-title{
@@ -167,10 +167,10 @@
     white-space:nowrap;
     transition:.2s;
   }
-  .today-btn:hover{border-color:var(--gold); transform:translateY(-1px); box-shadow:0 8px 18px -10px rgba(201,164,92,0.5);}
+  .today-btn:hover{border-color:var(--gold); transform:translateY(-1px); box-shadow:0 8px 18px -10px rgba(99,102,241,0.5);}
   .week.is-current{
     border-color:var(--gold);
-    box-shadow:0 0 0 1px var(--gold), 0 10px 24px -14px rgba(201,164,92,0.45);
+    box-shadow:0 0 0 1px var(--gold), 0 10px 24px -14px rgba(99,102,241,0.45);
   }
   .week.is-current .week-id{color:var(--gold-soft);}
   .week-current-tag{
@@ -185,8 +185,8 @@
     margin-left:8px;
   }
   @keyframes pulseHighlight{
-    0%{box-shadow:0 0 0 0 rgba(201,164,92,0.55);}
-    100%{box-shadow:0 0 0 14px rgba(201,164,92,0);}
+    0%{box-shadow:0 0 0 0 rgba(99,102,241,0.55);}
+    100%{box-shadow:0 0 0 14px rgba(99,102,241,0);}
   }
   .week.just-jumped{animation:pulseHighlight 1s ease-out 2;}
 
@@ -249,13 +249,14 @@
     padding:8px 11px;
     font-size:12px;
     font-family:'IBM Plex Mono',monospace;
-    color:var(--text);
+    color:#eef1f8;
     opacity:0;
     transition:opacity .12s;
     z-index:50;
     white-space:nowrap;
+    box-shadow:0 12px 28px -12px rgba(0,0,0,0.5);
   }
-  .chart-tooltip .tt-name{color:var(--gold-soft); font-family:'Inter',sans-serif; font-weight:600; margin-bottom:2px;}
+  .chart-tooltip .tt-name{color:#a5a8ff; font-family:'Inter',sans-serif; font-weight:600; margin-bottom:2px;}
   .donut-center-label{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
     text-align:center; pointer-events:none;
@@ -281,8 +282,8 @@
 
   .note{
     font-size:12.5px;color:var(--text-dim);
-    background:rgba(138,110,168,.1);
-    border:1px solid rgba(138,110,168,.25);
+    background:rgba(147,51,234,.1);
+    border:1px solid rgba(147,51,234,.25);
     border-radius:8px;
     padding:12px 14px;
     margin-bottom:30px;
@@ -357,7 +358,7 @@
   .cal-day .dnum{font-size:13px; color:var(--text);}
   .cal-day .dhours{font-size:9.5px; color:var(--gold-soft); margin-top:2px;}
   .cal-day .ddot{width:5px;height:5px;border-radius:50%;position:absolute;top:5px;right:5px;}
-  .cal-day.has-log{background:rgba(201,164,92,.08);}
+  .cal-day.has-log{background:rgba(99,102,241,.08);}
   .cal-day.is-today{box-shadow:0 0 0 2px var(--gold-soft) inset;}
   .cal-legend-row{
     display:flex;justify-content:space-between;align-items:center;
@@ -463,9 +464,9 @@
     position:relative;
     top:-1px;
   }
-  .phase-tag.contenu{background:rgba(47,102,144,.14);color:#2a5878;}
-  .phase-tag.vacances{background:rgba(106,74,134,.14);color:#5c3f74;}
-  .phase-tag.mocks{background:rgba(163,116,44,.14);color:var(--gold-soft);}
+  .phase-tag.contenu{background:rgba(37,99,235,.14);color:#1d4fc4;}
+  .phase-tag.vacances{background:rgba(147,51,234,.14);color:#7e22ce;}
+  .phase-tag.mocks{background:rgba(99,102,241,.14);color:var(--gold-soft);}
   .hours-input{
     display:flex;align-items:center;gap:6px;
     font-family:'IBM Plex Mono',monospace;
@@ -496,7 +497,7 @@
     background:var(--ink-3);
     transition:transform .18s cubic-bezier(.34,1.56,.64,1), background .15s, border-color .15s;
   }
-  .check.checked{background:rgba(111,156,124,.22);border-color:var(--done);}
+  .check.checked{background:rgba(22,163,74,.22);border-color:var(--done);}
   .check.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1);}
   @keyframes pop{ 0%{transform:scale(1);} 45%{transform:scale(1.35);} 100%{transform:scale(1);} }
 
@@ -573,8 +574,8 @@
     font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
     padding:2px 8px;border-radius:20px;white-space:nowrap;
   }
-  .domaine-status.ok{background:rgba(111,156,124,.18);color:var(--done);}
-  .domaine-status.ontime{background:rgba(201,164,92,.16);color:var(--gold-soft);}
+  .domaine-status.ok{background:rgba(22,163,74,.18);color:var(--done);}
+  .domaine-status.ontime{background:rgba(99,102,241,.16);color:var(--gold-soft);}
   .domaine-status.behind{background:rgba(184,64,47,.12);color:#b8402f;}
   .stats-legend{
     display:flex;gap:22px;flex-wrap:wrap;
@@ -631,8 +632,8 @@
     font-family:'IBM Plex Mono',monospace;
     font-size:11px;
     color:var(--gold-soft);
-    background:rgba(201,164,92,.12);
-    border:1px solid rgba(201,164,92,.25);
+    background:rgba(99,102,241,.12);
+    border:1px solid rgba(99,102,241,.25);
     padding:2px 8px;
     border-radius:20px;
     margin-left:8px;
@@ -674,7 +675,7 @@
     font-size:10px;color:var(--done);
     transition:transform .18s cubic-bezier(.34,1.56,.64,1);
   }
-  .lm-check.checked{background:rgba(111,156,124,.22);border-color:var(--done);}
+  .lm-check.checked{background:rgba(22,163,74,.22);border-color:var(--done);}
   .lm-check.pop{animation:pop .35s cubic-bezier(.34,1.56,.64,1);}
   .lm-text.checked{color:var(--text-faint);text-decoration:line-through;}
   .chev{color:var(--text-faint);font-size:12px;transition:transform .25s;}
@@ -1201,23 +1202,40 @@ const CAL_MONTHS = [
   {y:2026, m:10, label:'Novembre 2026'}
 ];
 
+const STORAGE_KEY = 'cfa-l2-planner-state';
+function hasNativeStorage(){
+  return typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+}
+function applyLoadedState(raw){
+  const parsed = JSON.parse(raw);
+  state = {
+    dayLogs: parsed.dayLogs || {},
+    weekDone: parsed.weekDone || {},
+    lmChecked: parsed.lmChecked || {}
+  };
+}
 async function loadState(){
+  let loaded = false;
   try{
-    const res = await window.storage.get('cfa-l2-planner-state');
-    if(res && res.value){
-      const parsed = JSON.parse(res.value);
-      state = {
-        dayLogs: parsed.dayLogs || {},
-        weekDone: parsed.weekDone || {},
-        lmChecked: parsed.lmChecked || {}
-      };
-    }
-  }catch(e){ /* rien de sauvegarde encore */ }
+    const local = localStorage.getItem(STORAGE_KEY);
+    if(local){ applyLoadedState(local); loaded = true; }
+  }catch(e){ console.error('localStorage read error', e); }
+  if(!loaded && hasNativeStorage()){
+    try{
+      const res = await window.storage.get(STORAGE_KEY);
+      if(res && res.value){ applyLoadedState(res.value); loaded = true; }
+    }catch(e){ /* rien de sauvegarde encore */ }
+  }
   render(true);
 }
 async function saveState(){
-  try{ await window.storage.set('cfa-l2-planner-state', JSON.stringify(state)); }
-  catch(e){ console.error('Storage error', e); }
+  const payload = JSON.stringify(state);
+  try{ localStorage.setItem(STORAGE_KEY, payload); }
+  catch(e){ console.error('localStorage write error', e); }
+  if(hasNativeStorage()){
+    try{ await window.storage.set(STORAGE_KEY, payload); }
+    catch(e){ console.error('window.storage write error', e); }
+  }
 }
 
 function getWeekForDate(dateStr){
@@ -1609,7 +1627,7 @@ function renderHoursDonut(){
   if(!svg || !legend || !totalLabel || !tooltip) return;
   svg.innerHTML = '';
 
-  const neutral = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#8c8367';
+  const neutral = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#8891a8';
 
   const slices = TOPICS.map(function(t){
     return {id:t.id, name:t.name, color:t.color, hours: actualHoursByDomaine(t.id)};
