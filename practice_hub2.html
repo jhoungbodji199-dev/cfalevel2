@@ -416,7 +416,7 @@
   .choice-btn.correct .choice-letter { color: var(--green); }
   .choice-btn.incorrect { border-color: var(--red); background: rgba(224,92,106,0.08); }
   .choice-btn.incorrect .choice-letter { color: var(--red); }
-  .choice-btn.reveal-correct { border-color: rgba(46,204,143,0.4); }
+  .choice-btn.reveal-correct { border-color: var(--green); background: rgba(46,204,143,0.08); }
   .choice-btn.reveal-correct .choice-letter { color: var(--green); }
   .choice-btn.exam-chosen { border-color: rgba(244,242,238,0.5); background: rgba(244,242,238,0.04); }
   .choice-btn.exam-chosen .choice-letter { color: rgba(244,242,238,0.85); }
@@ -2936,7 +2936,7 @@ function renderQuestion() {
       if (quizMode !== 'exam') {
         if (l === ans.chosen && ans.correct) btn.classList.add('correct');
         else if (l === ans.chosen && !ans.correct) btn.classList.add('incorrect');
-        if (l === q.correct && !ans.correct) btn.classList.add('reveal-correct');
+        if (l.toLowerCase() === q.correct.toLowerCase() && !ans.correct) btn.classList.add('reveal-correct');
       } else {
         // Mode examen : on rappelle juste quel choix a été fait, sans révéler la justesse
         if (l === ans.chosen) btn.classList.add('exam-chosen');
@@ -2992,7 +2992,7 @@ function revealCorrect() {
   if (!q) return;
   const letters = ['A','B','C','D'];
   document.querySelectorAll('.choice-btn').forEach((btn, i) => {
-    if (letters[i] === q.correct) btn.classList.add('reveal-correct');
+    if (letters[i].toLowerCase() === q.correct.toLowerCase()) btn.classList.add('reveal-correct');
   });
 }
 
@@ -3004,7 +3004,7 @@ function handleAnswer(chosen, q) {
   disableChoices();
   document.getElementById('timeoutBanner').classList.remove('show');
   const letters = ['A','B','C','D'];
-  const isCorrect = chosen === q.correct;
+  const isCorrect = !!chosen && chosen.toLowerCase() === q.correct.toLowerCase();
 
   // Coloration des choix : vert/rouge + reveal-correct UNIQUEMENT hors mode examen
   if (quizMode !== 'exam') {
@@ -3012,7 +3012,7 @@ function handleAnswer(chosen, q) {
       const l = letters[i];
       if (l === chosen && isCorrect) btn.classList.add('correct');
       else if (l === chosen && !isCorrect) btn.classList.add('incorrect');
-      if (l === q.correct && !isCorrect) btn.classList.add('reveal-correct');
+      if (l.toLowerCase() === q.correct.toLowerCase() && !isCorrect) btn.classList.add('reveal-correct');
     });
   } else {
     // Mode examen : juste marquer le choix sélectionné en neutre (gris/figé)
@@ -3047,7 +3047,7 @@ function showExamSavedBanner() {
 }
 
 function showFeedback(q, chosen) {
-  const isCorrect = chosen === q.correct;
+  const isCorrect = !!chosen && chosen.toLowerCase() === q.correct.toLowerCase();
   const timedOut = chosen === null;
   document.getElementById('feedbackIcon').textContent = timedOut ? '⏰' : (isCorrect ? '✅' : '❌');
   const titleEl = document.getElementById('feedbackTitle');
@@ -3265,7 +3265,7 @@ function buildReview() {
       let cls = '';
       if (ans?.chosen === l && ans.correct) cls = 'chosen-correct';
       else if (ans?.chosen === l && !ans.correct) cls = 'chosen-incorrect';
-      else if (l === q.correct) cls = 'correct-answer';
+      else if (l.toLowerCase() === q.correct.toLowerCase()) cls = 'correct-answer';
       choicesHtml += `<div class="review-choice ${cls}"><span style="min-width:16px;font-family:'DM Mono',monospace;font-size:0.72rem">${l}.</span>${ch.replace(/^[A-D]\.\s*/,'')}</div>`;
     });
 
@@ -3363,7 +3363,7 @@ function reviewFromHistory(topicId, batchId) {
       let cls = '';
       if (d.chosen === l && d.isCorrect) cls = 'chosen-correct';
       else if (d.chosen === l && !d.isCorrect) cls = 'chosen-incorrect';
-      else if (l === d.correct) cls = 'correct-answer';
+      else if (l.toLowerCase() === d.correct.toLowerCase()) cls = 'correct-answer';
       choicesHtml += `<div class="review-choice ${cls}"><span style="min-width:16px;font-family:'DM Mono',monospace;font-size:0.72rem">${l}.</span>${ch.replace(/^[A-D]\.\s*/,'')}</div>`;
     });
     let expHtml = '';
