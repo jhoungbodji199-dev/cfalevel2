@@ -704,6 +704,59 @@
     font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);
     white-space:nowrap;
   }
+
+  /* Histogramme temps reel par thematique */
+  .hbar-wrap{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px 22px 16px 22px;
+    margin-bottom:44px;
+  }
+  .hbar-row{
+    display:grid;
+    grid-template-columns:minmax(100px,160px) 1fr auto;
+    align-items:center;
+    gap:14px;
+    margin-bottom:12px;
+    cursor:pointer;
+  }
+  .hbar-row:last-child{margin-bottom:0;}
+  .hbar-name{
+    font-size:12.5px;color:var(--text-dim);
+    display:flex;align-items:center;gap:8px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .hbar-name .sw{width:9px;height:9px;border-radius:50%;flex:none;}
+  .hbar-track{
+    position:relative;height:16px;
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    border-radius:5px;
+  }
+  .hbar-fill{
+    position:absolute;top:0;left:0;height:100%;
+    border-radius:5px;
+    transition:width .5s cubic-bezier(.2,.8,.2,1);
+    opacity:.88;
+  }
+  .hbar-row:hover .hbar-fill{opacity:1;filter:brightness(1.1);}
+  .hbar-target{
+    position:absolute;top:-3px;bottom:-3px;width:2px;
+    background:var(--vacances);
+    box-shadow:0 0 5px rgba(147,51,234,.6);
+  }
+  .hbar-value{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+    color:var(--gold-soft);text-align:right;white-space:nowrap;
+  }
+  .hbar-empty-note{color:var(--text-faint);font-size:13px;line-height:1.5;}
+  .hbar-legend-note{
+    display:flex;gap:16px;flex-wrap:wrap;
+    font-size:11px;color:var(--text-faint);
+    margin-top:14px;padding-top:12px;
+    border-top:1px solid var(--line);
+  }
   .topic{
     border:1px solid var(--line);
     border-radius:8px;
@@ -927,18 +980,10 @@
 
   <div id="viewStats" class="view">
     <div class="section-title">Répartition réelle du temps étudié</div>
-    <div class="section-sub">Se remplit au fur et à mesure que tu logues des heures par chapitre dans le calendrier</div>
-    <div class="donut-section" id="hoursDonutSection">
-      <div class="donut-wrap">
-        <svg id="hoursDonutSvg" viewBox="0 0 200 200" width="200" height="200"></svg>
-        <div class="donut-center-label">
-          <div class="n" id="hoursDonutTotal">0h</div>
-          <div class="l">loguées</div>
-        </div>
-      </div>
-      <div class="donut-legend" id="hoursDonutLegend"></div>
+    <div class="section-sub">Se remplit au fur et à mesure que tu logues des heures par chapitre — le repère indique l'objectif prévu par thème</div>
+    <div class="hbar-wrap" id="hoursBarSection">
+      <div class="hbar-list" id="hoursBarList"></div>
     </div>
-    <div id="hoursDonutTooltip" class="chart-tooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
 
     <div class="section-title">Courbe des heures journalières</div>
     <div class="section-sub">Heures loguées chaque jour depuis le début du plan (13 juil.) — survole un point pour le détail</div>
@@ -1826,76 +1871,50 @@ function cumulativePlannedToDate(){
   return Math.round(total*10)/10;
 }
 
-function renderHoursDonut(){
-  const svg = document.getElementById('hoursDonutSvg');
-  const legend = document.getElementById('hoursDonutLegend');
-  const totalLabel = document.getElementById('hoursDonutTotal');
-  const tooltip = document.getElementById('hoursDonutTooltip');
-  if(!svg || !legend || !totalLabel || !tooltip) return;
-  svg.innerHTML = '';
+function renderHoursBarChart(){
+  const wrap = document.getElementById('hoursBarList');
+  if(!wrap) return;
 
   const neutral = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#8891a8';
 
-  const slices = TOPICS.map(function(t){
-    return {id:t.id, name:t.name, color:t.color, hours: actualHoursByDomaine(t.id)};
+  const rows = TOPICS.map(function(t){
+    return {id:t.id, name:t.name, color:t.color, hours: actualHoursByDomaine(t.id), target: PLANNED_BY_TOPIC[t.id]||0};
   });
   const generalH = actualHoursGeneral();
   if(generalH > 0){
-    slices.push({id:'general', name:'Mocks / révision transverse', color:neutral, hours:generalH});
+    rows.push({id:'general', name:'Mocks / révision transverse', color:neutral, hours:generalH, target:0});
   }
-  const total = slices.reduce(function(a,s){ return a+s.hours; }, 0);
-  totalLabel.textContent = (Math.round(total*10)/10)+'h';
 
+  const total = rows.reduce(function(a,r){ return a+r.hours; }, 0);
   if(total <= 0){
-    const track = document.createElementNS('http://www.w3.org/2000/svg','path');
-    track.setAttribute('d', describeArc(100,100,80,50,0,359.99));
-    track.setAttribute('fill', 'var(--ink-3)');
-    svg.appendChild(track);
-    legend.innerHTML = '<div class="donut-empty-note">Aucune heure loguée pour l\'instant — renseigne tes heures dans le calendrier pour voir ce camembert se remplir au fil des semaines.</div>';
+    wrap.innerHTML = '<div class="hbar-empty-note">Aucune heure loguée pour l\'instant — renseigne tes heures dans le calendrier pour voir cet histogramme se remplir au fil des semaines.</div>';
     return;
   }
 
-  let angle = 0;
-  slices.filter(function(s){ return s.hours > 0; }).forEach(function(s){
-    const rawSweep = (s.hours/total)*360;
-    const sweep = Math.min(Math.max(rawSweep,0.5), 359.9);
-    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', describeArc(100,100,80,50, angle, angle+sweep));
-    path.setAttribute('fill', s.color);
-    path.classList.add('slice');
-    path.addEventListener('mousemove', function(e){
-      tooltip.querySelector('.tt-name').textContent = s.name;
-      tooltip.querySelector('.tt-detail').textContent = (Math.round(s.hours*10)/10)+'h - '+Math.round((s.hours/total)*100)+'%';
-      tooltip.style.left = (e.clientX+14)+'px';
-      tooltip.style.top = (e.clientY+10)+'px';
-      tooltip.style.opacity = '1';
-    });
-    path.addEventListener('mouseleave', function(){ tooltip.style.opacity='0'; });
-    if(s.id !== 'general'){
-      path.addEventListener('click', function(){
-        const tabRoute = document.getElementById('tabRoute');
-        if(tabRoute) tabRoute.click();
-        scrollToTopic(s.id);
-      });
-    }
-    svg.appendChild(path);
-    angle += sweep;
-  });
+  rows.sort(function(a,b){ return b.hours - a.hours; });
+  const maxScale = Math.max.apply(null, rows.map(function(r){ return Math.max(r.hours, r.target); })) || 1;
 
-  legend.innerHTML = slices.filter(function(s){ return s.hours > 0; }).map(function(s){
-    const pct = Math.round((s.hours/total)*100);
-    return '<div class="donut-legend-item" data-topic="'+s.id+'">'+
-      '<span class="sw" style="background:'+s.color+'"></span>'+
-      s.name+
-      '<span class="q">'+(Math.round(s.hours*10)/10)+'h · '+pct+'%</span>'+
+  wrap.innerHTML = rows.map(function(r){
+    const pctFill = Math.max(r.hours>0?1.5:0, Math.min(100, (r.hours/maxScale)*100));
+    const pctTarget = r.target>0 ? Math.min(100, (r.target/maxScale)*100) : null;
+    const valueLabel = r.target>0 ? ((Math.round(r.hours*10)/10)+'h / '+r.target+'h') : ((Math.round(r.hours*10)/10)+'h');
+    return '<div class="hbar-row" data-topic="'+r.id+'" title="'+r.name+' — '+valueLabel+'">'+
+      '<div class="hbar-name"><span class="sw" style="background:'+r.color+'"></span>'+r.name+'</div>'+
+      '<div class="hbar-track">'+
+        '<div class="hbar-fill" style="width:'+pctFill+'%;background:'+r.color+'"></div>'+
+        (pctTarget!==null ? '<div class="hbar-target" style="left:'+pctTarget+'%"></div>' : '')+
+      '</div>'+
+      '<div class="hbar-value">'+valueLabel+'</div>'+
     '</div>';
-  }).join('');
-  legend.querySelectorAll('.donut-legend-item').forEach(function(item){
-    item.addEventListener('click', function(){
-      if(item.dataset.topic === 'general') return;
+  }).join('') + '<div class="hbar-legend-note"><span><span class="dot" style="background:var(--vacances)"></span> objectif prévu par thème</span></div>';
+
+  wrap.querySelectorAll('.hbar-row').forEach(function(row){
+    row.addEventListener('click', function(){
+      const id = row.dataset.topic;
+      if(id === 'general') return;
       const tabRoute = document.getElementById('tabRoute');
       if(tabRoute) tabRoute.click();
-      scrollToTopic(item.dataset.topic);
+      scrollToTopic(id);
     });
   });
 }
@@ -2300,7 +2319,7 @@ function initLcModeToggle(){
 }
 
 function renderStats(){
-  renderHoursDonut();
+  renderHoursBarChart();
   renderExtraStats();
   renderHoursLineChart();
   const summaryEl = document.getElementById('statsSummary');
