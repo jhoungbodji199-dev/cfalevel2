@@ -656,6 +656,54 @@
     font-size:12px;color:var(--text-faint);
     margin-top:16px;
   }
+
+  /* Courbe des heures journalieres */
+  .lc-toggle{display:flex;gap:8px;margin-bottom:16px;}
+  .lc-btn{
+    background:var(--ink-3);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    padding:6px 13px;
+    border-radius:20px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .lc-btn:hover{border-color:var(--gold);color:var(--gold-soft);}
+  .lc-btn.active{background:var(--gold-soft);border-color:var(--gold-soft);color:#fff;}
+  .line-chart-wrap{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 16px 8px 16px;
+    margin-bottom:16px;
+  }
+  .line-chart-wrap svg{width:100%;height:auto;display:block;}
+  .lc-grid-line{stroke:var(--line);stroke-width:1;}
+  .lc-axis-label{font-family:'IBM Plex Mono',monospace;font-size:9px;fill:var(--text-faint);}
+  .lc-area{fill:url(#lcAreaGradient);opacity:.6;}
+  .lc-line{fill:none;stroke:var(--gold);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .lc-dot{fill:var(--ink-2);stroke:var(--gold-soft);stroke-width:1.6;cursor:pointer;transition:r .12s;}
+  .lc-dot.has-hours{fill:var(--gold-soft);}
+  .lc-dot:hover{stroke:var(--gold);}
+  .lc-today-line{stroke:var(--vacances);stroke-width:1;stroke-dasharray:4 3;}
+  .lc-mode-toggle{display:flex;gap:8px;margin-bottom:10px;}
+  .lc-legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+  .lc-legend-item{
+    display:flex;align-items:center;gap:6px;
+    font-size:11.5px;color:var(--text-dim);
+    cursor:pointer;padding:4px 9px;border-radius:14px;
+    border:1px solid transparent;transition:.15s;
+  }
+  .lc-legend-item:hover{background:var(--ink-3);}
+  .lc-legend-item.hidden{opacity:.35;text-decoration:line-through;}
+  .lc-legend-item .sw{width:8px;height:8px;border-radius:50%;flex:none;}
+  .lc-legend-item .q{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-left:2px;}
+  .sr-meta{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-faint);
+    white-space:nowrap;
+  }
   .topic{
     border:1px solid var(--line);
     border-radius:8px;
@@ -891,6 +939,23 @@
       <div class="donut-legend" id="hoursDonutLegend"></div>
     </div>
     <div id="hoursDonutTooltip" class="chart-tooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
+
+    <div class="section-title">Courbe des heures journalières</div>
+    <div class="section-sub">Heures loguées chaque jour depuis le début du plan (13 juil.) — survole un point pour le détail</div>
+    <div class="lc-toggle" id="lcToggle">
+      <button class="lc-btn active" data-range="30" type="button">30 derniers jours</button>
+      <button class="lc-btn" data-range="all" type="button">Tout le plan</button>
+    </div>
+    <div class="lc-mode-toggle" id="lcModeToggle">
+      <button class="lc-btn active" data-mode="total" type="button">Total</button>
+      <button class="lc-btn" data-mode="thematique" type="button">Par thématique</button>
+    </div>
+    <div id="extraStatsRow" class="stats-summary-row"></div>
+    <div class="line-chart-wrap">
+      <svg id="hoursLineSvg" viewBox="0 0 700 220" preserveAspectRatio="none"></svg>
+      <div class="lc-legend" id="lcLegend"></div>
+    </div>
+    <div id="lineChartTooltip" class="chart-tooltip"><div class="tt-name"></div><div class="tt-detail"></div></div>
 
     <div class="section-title">Prévisionnel vs réel</div>
     <div class="section-sub">Basé sur les heures enregistrées jour par jour dans le calendrier, sommées par sous-domaine puis par domaine</div>
@@ -1247,6 +1312,31 @@ function actualHoursByDomaine(topicId){
   topic.lms.forEach(function(_,i){ total += byLm[topicId+'-'+i] || 0; });
   return total;
 }
+function lmDetailStats(){
+  const map = {};
+  Object.keys(state.dayLogs).forEach(function(d){
+    const log = state.dayLogs[d];
+    if(!log || !log.entries) return;
+    log.entries.forEach(function(e){
+      if(!e.lmKey || isGeneralKey(e.lmKey)) return;
+      const parsed = parseLmKey(e.lmKey);
+      if(!parsed) return;
+      const h = Number(e.hours)||0;
+      const key = parsed.topic.id+'-'+parsed.lmIndex;
+      if(!map[key]) map[key] = {hours:0, days:{}, lastDate:null};
+      map[key].hours += h;
+      if(h > 0){
+        map[key].days[d] = true;
+        if(!map[key].lastDate || d > map[key].lastDate) map[key].lastDate = d;
+      }
+    });
+  });
+  Object.keys(map).forEach(function(k){
+    map[k].sessions = Object.keys(map[k].days).length;
+    map[k].hours = Math.round(map[k].hours*10)/10;
+  });
+  return map;
+}
 
 let statsOpenIds = [];
 
@@ -1260,6 +1350,11 @@ const CAL_MONTHS = [
   {y:2026, m:9,  label:'Octobre 2026'},
   {y:2026, m:10, label:'Novembre 2026'}
 ];
+(function(){
+  const t = new Date();
+  const idx = CAL_MONTHS.findIndex(function(mo){ return mo.y===t.getFullYear() && mo.m===t.getMonth(); });
+  calMonthIdx = idx >= 0 ? idx : 0;
+})();
 
 const STORAGE_KEY = 'cfa-l2-planner-state';
 function hasNativeStorage(){
@@ -1805,8 +1900,409 @@ function renderHoursDonut(){
   });
 }
 
+let lcRange = '30';
+let lcMode = 'total';
+let lcHiddenSeries = {};
+
+function planDateRange(){
+  return {start: WEEKS[0].start, end: WEEKS[WEEKS.length-1].end};
+}
+function addDaysISO(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return toISO(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function buildDailySeries(range){
+  const plan = planDateRange();
+  const today = todayISO();
+  const end = today < plan.end ? today : plan.end;
+  let start;
+  if(range === 'all'){
+    start = plan.start;
+  } else {
+    start = addDaysISO(end, -29);
+    if(start < plan.start) start = plan.start;
+  }
+  const days = [];
+  let cur = start;
+  let guard = 0;
+  while(cur <= end && guard < 400){
+    days.push({iso:cur, hours: Math.round(dayTotalHours(cur)*10)/10});
+    cur = addDaysISO(cur, 1);
+    guard++;
+  }
+  return days;
+}
+
+function seriesDefsList(){
+  const neutral = getComputedStyle(document.documentElement).getPropertyValue('--text-faint').trim() || '#8891a8';
+  return TOPICS.map(function(t){ return {id:t.id, name:t.name, color:t.color}; })
+    .concat([{id:'general', name:'Mocks / révision transverse', color: neutral}]);
+}
+
+function buildDailyTopicMatrix(range){
+  const plan = planDateRange();
+  const today = todayISO();
+  const end = today < plan.end ? today : plan.end;
+  let start;
+  if(range === 'all'){ start = plan.start; }
+  else { start = addDaysISO(end, -29); if(start < plan.start) start = plan.start; }
+  const days = [];
+  let cur = start, guard = 0;
+  while(cur <= end && guard < 400){
+    const row = {iso:cur, total:0};
+    TOPICS.forEach(function(t){ row[t.id] = 0; });
+    row.general = 0;
+    const log = state.dayLogs[cur];
+    if(log && log.entries){
+      log.entries.forEach(function(e){
+        const h = Number(e.hours)||0;
+        if(!e.lmKey || h<=0) return;
+        if(isGeneralKey(e.lmKey)){ row.general += h; }
+        else{
+          const parsed = parseLmKey(e.lmKey);
+          if(parsed){ row[parsed.topic.id] = (row[parsed.topic.id]||0) + h; }
+        }
+        row.total += h;
+      });
+    }
+    row.total = Math.round(row.total*10)/10;
+    days.push(row);
+    cur = addDaysISO(cur, 1);
+    guard++;
+  }
+  return days;
+}
+
+function renderHoursLineChart(){
+  if(lcMode === 'thematique') renderHoursLineChartStacked();
+  else renderHoursLineChartTotal();
+}
+
+function renderHoursLineChartTotal(){
+  const svg = document.getElementById('hoursLineSvg');
+  const tooltip = document.getElementById('lineChartTooltip');
+  const legendEl = document.getElementById('lcLegend');
+  if(!svg || !tooltip) return;
+  svg.innerHTML = '';
+  if(legendEl) legendEl.innerHTML = '';
+
+  const days = buildDailySeries(lcRange);
+  const W = 700, H = 220, padL = 34, padR = 14, padT = 14, padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  if(days.length === 0){
+    const note = document.createElementNS('http://www.w3.org/2000/svg','text');
+    note.setAttribute('x', W/2); note.setAttribute('y', H/2);
+    note.setAttribute('text-anchor','middle');
+    note.setAttribute('class','lc-axis-label');
+    note.textContent = 'Pas encore de jours a afficher sur cette periode.';
+    svg.appendChild(note);
+    return;
+  }
+
+  const maxHoursRaw = Math.max.apply(null, days.map(function(d){ return d.hours; }));
+  const maxHours = Math.max(2, Math.ceil(maxHoursRaw*1.15));
+
+  function xFor(i){ return days.length===1 ? padL + plotW/2 : padL + (i/(days.length-1))*plotW; }
+  function yFor(h){ return padT + plotH - (h/maxHours)*plotH; }
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML = '<linearGradient id="lcAreaGradient" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="var(--gold)" stop-opacity="0.45"/>'+
+    '<stop offset="100%" stop-color="var(--gold)" stop-opacity="0.02"/>'+
+  '</linearGradient>';
+  svg.appendChild(defs);
+
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const h = (maxHours/steps)*i;
+    const y = yFor(h);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', W-padR);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class','lc-grid-line');
+    svg.appendChild(line);
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', padL-8); label.setAttribute('y', y+3);
+    label.setAttribute('text-anchor','end');
+    label.setAttribute('class','lc-axis-label');
+    label.textContent = (Math.round(h*10)/10)+'h';
+    svg.appendChild(label);
+  }
+
+  const labelEvery = Math.max(1, Math.ceil(days.length/7));
+  days.forEach(function(d,i){
+    if(i % labelEvery !== 0 && i !== days.length-1) return;
+    const dt = new Date(d.iso+'T00:00:00');
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', xFor(i)); label.setAttribute('y', H-8);
+    label.setAttribute('text-anchor','middle');
+    label.setAttribute('class','lc-axis-label');
+    label.textContent = pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1);
+    svg.appendChild(label);
+  });
+
+  const today = todayISO();
+  const todayIdx = days.findIndex(function(d){ return d.iso===today; });
+  if(todayIdx >= 0){
+    const tx = xFor(todayIdx);
+    const tl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    tl.setAttribute('x1', tx); tl.setAttribute('x2', tx);
+    tl.setAttribute('y1', padT); tl.setAttribute('y2', padT+plotH);
+    tl.setAttribute('class','lc-today-line');
+    svg.appendChild(tl);
+  }
+
+  let linePath = '';
+  days.forEach(function(d,i){
+    const x = xFor(i), y = yFor(d.hours);
+    linePath += (i===0?'M':'L')+x+','+y+' ';
+  });
+  const areaPath = linePath + 'L'+xFor(days.length-1)+','+(padT+plotH)+' L'+xFor(0)+','+(padT+plotH)+' Z';
+
+  const area = document.createElementNS('http://www.w3.org/2000/svg','path');
+  area.setAttribute('d', areaPath);
+  area.setAttribute('class','lc-area');
+  svg.appendChild(area);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg','path');
+  line.setAttribute('d', linePath);
+  line.setAttribute('class','lc-line');
+  svg.appendChild(line);
+
+  days.forEach(function(d,i){
+    const x = xFor(i), y = yFor(d.hours);
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', d.hours>0?3.4:2.2);
+    dot.setAttribute('class', 'lc-dot'+(d.hours>0?' has-hours':''));
+    dot.addEventListener('mousemove', function(e){
+      const dt = new Date(d.iso+'T00:00:00');
+      tooltip.querySelector('.tt-name').textContent = pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1)+'/'+dt.getFullYear();
+      tooltip.querySelector('.tt-detail').textContent = d.hours>0 ? (d.hours+'h loguees') : 'Rien logue';
+      tooltip.style.left = (e.clientX+14)+'px';
+      tooltip.style.top = (e.clientY+10)+'px';
+      tooltip.style.opacity = '1';
+    });
+    dot.addEventListener('mouseleave', function(){ tooltip.style.opacity='0'; });
+    svg.appendChild(dot);
+  });
+}
+
+function renderHoursLineChartStacked(){
+  const svg = document.getElementById('hoursLineSvg');
+  const tooltip = document.getElementById('lineChartTooltip');
+  const legendEl = document.getElementById('lcLegend');
+  if(!svg || !tooltip || !legendEl) return;
+  svg.innerHTML = '';
+
+  const rows = buildDailyTopicMatrix(lcRange);
+  const seriesDefs = seriesDefsList();
+  const W = 700, H = 220, padL = 34, padR = 14, padT = 14, padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  if(rows.length === 0){
+    const note = document.createElementNS('http://www.w3.org/2000/svg','text');
+    note.setAttribute('x', W/2); note.setAttribute('y', H/2);
+    note.setAttribute('text-anchor','middle');
+    note.setAttribute('class','lc-axis-label');
+    note.textContent = 'Pas encore de jours a afficher sur cette periode.';
+    svg.appendChild(note);
+    legendEl.innerHTML = '';
+    return;
+  }
+
+  const visibleDefs = seriesDefs.filter(function(sd){ return !lcHiddenSeries[sd.id]; });
+
+  const seriesTotals = {};
+  seriesDefs.forEach(function(sd){ seriesTotals[sd.id] = 0; });
+  rows.forEach(function(r){ seriesDefs.forEach(function(sd){ seriesTotals[sd.id] += r[sd.id]||0; }); });
+
+  const stackMax = rows.reduce(function(m,r){
+    const sum = visibleDefs.reduce(function(a,sd){ return a + (r[sd.id]||0); }, 0);
+    return Math.max(m, sum);
+  }, 0);
+  const maxHours = Math.max(2, Math.ceil(stackMax*1.15));
+
+  function xFor(i){ return rows.length===1 ? padL + plotW/2 : padL + (i/(rows.length-1))*plotW; }
+  function yFor(h){ return padT + plotH - (h/maxHours)*plotH; }
+
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const h = (maxHours/steps)*i;
+    const y = yFor(h);
+    const gline = document.createElementNS('http://www.w3.org/2000/svg','line');
+    gline.setAttribute('x1', padL); gline.setAttribute('x2', W-padR);
+    gline.setAttribute('y1', y); gline.setAttribute('y2', y);
+    gline.setAttribute('class','lc-grid-line');
+    svg.appendChild(gline);
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', padL-8); label.setAttribute('y', y+3);
+    label.setAttribute('text-anchor','end');
+    label.setAttribute('class','lc-axis-label');
+    label.textContent = (Math.round(h*10)/10)+'h';
+    svg.appendChild(label);
+  }
+
+  const labelEvery = Math.max(1, Math.ceil(rows.length/7));
+  rows.forEach(function(r,i){
+    if(i % labelEvery !== 0 && i !== rows.length-1) return;
+    const dt = new Date(r.iso+'T00:00:00');
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', xFor(i)); label.setAttribute('y', H-8);
+    label.setAttribute('text-anchor','middle');
+    label.setAttribute('class','lc-axis-label');
+    label.textContent = pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1);
+    svg.appendChild(label);
+  });
+
+  const today = todayISO();
+  const todayIdx = rows.findIndex(function(r){ return r.iso===today; });
+  if(todayIdx >= 0){
+    const tx = xFor(todayIdx);
+    const tl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    tl.setAttribute('x1', tx); tl.setAttribute('x2', tx);
+    tl.setAttribute('y1', padT); tl.setAttribute('y2', padT+plotH);
+    tl.setAttribute('class','lc-today-line');
+    svg.appendChild(tl);
+  }
+
+  let cumBase = rows.map(function(){ return 0; });
+  visibleDefs.forEach(function(sd){
+    let topLine = '';
+    rows.forEach(function(r,i){
+      const v = r[sd.id]||0;
+      const top = cumBase[i] + v;
+      topLine += (i===0?'M':'L')+xFor(i)+','+yFor(top)+' ';
+    });
+    let bottomLine = '';
+    for(let i=rows.length-1;i>=0;i--){
+      bottomLine += 'L'+xFor(i)+','+yFor(cumBase[i])+' ';
+    }
+    const areaD = topLine + bottomLine + 'Z';
+    const area = document.createElementNS('http://www.w3.org/2000/svg','path');
+    area.setAttribute('d', areaD);
+    area.setAttribute('fill', sd.color);
+    area.setAttribute('opacity', '0.78');
+    area.setAttribute('stroke', sd.color);
+    area.setAttribute('stroke-width', '1');
+    svg.appendChild(area);
+    rows.forEach(function(r,i){ cumBase[i] += (r[sd.id]||0); });
+  });
+
+  rows.forEach(function(r,i){
+    const x = xFor(i);
+    const colW = rows.length>1 ? plotW/(rows.length-1) : plotW;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', x-colW/2); rect.setAttribute('y', padT);
+    rect.setAttribute('width', colW); rect.setAttribute('height', plotH);
+    rect.setAttribute('fill', 'transparent');
+    rect.style.cursor = 'pointer';
+    rect.addEventListener('mousemove', function(e){
+      const dt = new Date(r.iso+'T00:00:00');
+      const parts = visibleDefs.filter(function(sd){ return (r[sd.id]||0) > 0; })
+        .map(function(sd){ return sd.name+': '+(Math.round((r[sd.id]||0)*10)/10)+'h'; });
+      tooltip.querySelector('.tt-name').textContent = pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1)+'/'+dt.getFullYear()+' — '+r.total+'h';
+      tooltip.querySelector('.tt-detail').innerHTML = parts.length ? parts.join('<br>') : 'Rien logue';
+      tooltip.style.left = (e.clientX+14)+'px';
+      tooltip.style.top = (e.clientY+10)+'px';
+      tooltip.style.opacity = '1';
+    });
+    rect.addEventListener('mouseleave', function(){ tooltip.style.opacity='0'; });
+    svg.appendChild(rect);
+  });
+
+  legendEl.innerHTML = seriesDefs.map(function(sd){
+    const hidden = !!lcHiddenSeries[sd.id];
+    const total = Math.round(seriesTotals[sd.id]*10)/10;
+    return '<div class="lc-legend-item'+(hidden?' hidden':'')+'" data-series="'+sd.id+'">'+
+      '<span class="sw" style="background:'+sd.color+'"></span>'+
+      sd.name+
+      '<span class="q">'+total+'h</span>'+
+    '</div>';
+  }).join('');
+  legendEl.querySelectorAll('.lc-legend-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      const id = item.dataset.series;
+      lcHiddenSeries[id] = !lcHiddenSeries[id];
+      renderHoursLineChart();
+    });
+  });
+}
+
+function computeExtraStats(){
+  const plan = planDateRange();
+  const today = todayISO();
+  const lastDay = today < plan.end ? today : plan.end;
+  const activeDays = Object.keys(state.dayLogs).filter(function(d){ return dayTotalHours(d) > 0; });
+  const activeCount = activeDays.length;
+  const totalHours = activeDays.reduce(function(a,d){ return a+dayTotalHours(d); }, 0);
+  const avgActive = activeCount>0 ? Math.round((totalHours/activeCount)*10)/10 : 0;
+
+  let bestDay = null, bestHours = 0;
+  activeDays.forEach(function(d){
+    const h = dayTotalHours(d);
+    if(h > bestHours){ bestHours = h; bestDay = d; }
+  });
+
+  let streak = 0;
+  let cursor = lastDay;
+  while(dayTotalHours(cursor) > 0){
+    streak++;
+    cursor = addDaysISO(cursor, -1);
+    if(cursor < plan.start) break;
+  }
+
+  return {activeCount:activeCount, avgActive:avgActive, bestDay:bestDay, bestHours: Math.round(bestHours*10)/10, streak:streak};
+}
+
+function renderExtraStats(){
+  const el = document.getElementById('extraStatsRow');
+  if(!el) return;
+  const ex = computeExtraStats();
+  const bestLabel = ex.bestDay ? (function(){
+    const dt = new Date(ex.bestDay+'T00:00:00');
+    return pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1)+' - '+ex.bestHours+'h';
+  })() : '—';
+  el.innerHTML =
+    '<div class="ss-card"><div class="ss-num">'+ex.activeCount+'</div><div class="ss-label">Jours actifs</div></div>'+
+    '<div class="ss-card"><div class="ss-num">'+ex.avgActive+'h</div><div class="ss-label">Moyenne / jour actif</div></div>'+
+    '<div class="ss-card"><div class="ss-num">'+bestLabel+'</div><div class="ss-label">Meilleure journée</div></div>'+
+    '<div class="ss-card"><div class="ss-num">'+ex.streak+'</div><div class="ss-label">Streak actuel (jours)</div></div>';
+}
+
+function initLcToggle(){
+  const wrap = document.getElementById('lcToggle');
+  if(!wrap) return;
+  wrap.querySelectorAll('.lc-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      wrap.querySelectorAll('.lc-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      lcRange = btn.dataset.range;
+      renderHoursLineChart();
+    });
+  });
+}
+
+function initLcModeToggle(){
+  const wrap = document.getElementById('lcModeToggle');
+  if(!wrap) return;
+  wrap.querySelectorAll('.lc-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      wrap.querySelectorAll('.lc-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      lcMode = btn.dataset.mode;
+      renderHoursLineChart();
+    });
+  });
+}
+
 function renderStats(){
   renderHoursDonut();
+  renderExtraStats();
+  renderHoursLineChart();
   const summaryEl = document.getElementById('statsSummary');
   const domainesEl = document.getElementById('statsDomaines');
   if(!summaryEl || !domainesEl) return;
@@ -1825,7 +2321,7 @@ function renderStats(){
       '<div class="ss-card"><div class="ss-num '+(diff>=0?'ahead':'behind')+'">'+(diff>=0?'+':'')+diff+'h</div><div class="ss-label">'+(diff>=0?'Avance sur le prevu':'Retard sur le prevu')+'</div></div>'+
     '</div>';
 
-  const byLm = actualHoursByLm();
+  const lmStats = lmDetailStats();
   const today = todayISO();
   let html = '<div class="stats-legend">'+
     '<span>&#10003; module marque termine (checklist manuelle, independant des heures)</span>'+
@@ -1859,11 +2355,20 @@ function renderStats(){
       '<div class="domaine-sub'+(isOpen?' open':'')+'" id="domsub-'+t.id+'">'+
         t.lms.map(function(lm,i){
           const key = t.id+'-'+i;
-          const rh = byLm[key] || 0;
+          const ds = lmStats[key];
+          const rh = ds ? ds.hours : 0;
+          const sessions = ds ? ds.sessions : 0;
+          const lastDate = ds ? ds.lastDate : null;
           const done = !!state.lmChecked[key];
+          let meta = '';
+          if(sessions > 0){
+            const dt = new Date(lastDate+'T00:00:00');
+            meta = sessions+' seance'+(sessions>1?'s':'')+' · derniere le '+pad2(dt.getDate())+'/'+pad2(dt.getMonth()+1);
+          }
           return '<div class="sub-row">'+
             '<span class="sr-done" data-lmkey="'+key+'" style="color:'+(done?'var(--done)':'var(--text-faint)')+'" title="Marquer ce module comme termine / pas termine">'+(done?'&#10003;':'&#9675;')+'</span>'+
             '<span class="sr-name">'+lm+'</span>'+
+            '<span class="sr-meta">'+meta+'</span>'+
             '<span class="sr-hours">'+(rh>0?rh+'h':'-')+'</span>'+
           '</div>';
         }).join('')+
@@ -1958,6 +2463,8 @@ function initJumpToday(){
 initCalendarNav();
 initTabs();
 initJumpToday();
+initLcToggle();
+initLcModeToggle();
 loadState();
 </script>
 </body>
