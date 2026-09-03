@@ -3328,10 +3328,15 @@ function showReview() { showScreen('review'); buildReview(); }
 
 // Révision depuis l'historique (Stats → 📋)
 function reviewFromHistory(topicId, batchId) {
-  const attempts = (attemptsHistory[topicId]?.[batchId] || [])
-    .filter(a => a.detail && a.detail.length > 0);
-  if (attempts.length === 0) {
-    alert('Aucune session avec détail disponible pour ce batch.\n(Seules les sessions effectuées après la mise à jour sont révisables.)');
+  const allAttempts = attemptsHistory[topicId]?.[batchId] || [];
+  if (allAttempts.length === 0) {
+    alert('Aucune session enregistrée pour ce batch.');
+    return;
+  }
+  const withDetail = allAttempts.filter(a => a.detail && a.detail.length > 0);
+  const last = withDetail.length > 0 ? withDetail[withDetail.length - 1] : allAttempts[allAttempts.length - 1];
+  if (!last.detail || last.detail.length === 0) {
+    alert(`Score enregistré : ${last.correct}/${last.total} (${last.dateStr}) — détail question par question non disponible pour cette session.`);
     return;
   }
   const last = attempts[attempts.length - 1];
