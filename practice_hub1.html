@@ -4897,18 +4897,33 @@ function showReview() { showScreen('review'); buildReview(); }
 
 // Révision depuis l'historique (Stats → 📋)
 function reviewFromHistory(topicId, batchId) {
-  const attempts = (attemptsHistory[topicId]?.[batchId] || [])
-    .filter(a => a.detail && a.detail.length > 0);
-  if (attempts.length === 0) {
-    alert('Aucune session avec détail disponible pour ce batch.\n(Seules les sessions effectuées après la mise à jour sont révisables.)');
+  const allAttempts = attemptsHistory[topicId]?.[batchId] || [];
+  if (allAttempts.length === 0) {
+    alert('Aucune session enregistrée pour ce batch.');
     return;
   }
-  const last = attempts[attempts.length - 1];
+  // On préfère la dernière tentative qui a un détail complet ; sinon, on prend
+  // simplement la toute dernière tentative (revue en mode "résumé" seulement).
+  const withDetail = allAttempts.filter(a => a.detail && a.detail.length > 0);
+  const last = withDetail.length > 0 ? withDetail[withDetail.length - 1] : allAttempts[allAttempts.length - 1];
   const topic = TOPICS.find(t => t.id === topicId);
   const batch = topic?.batches?.find(b => b.id === batchId);
   const list = document.getElementById('reviewList');
   list.innerHTML = '';
   const letters = ['A','B','C','D'];
+
+  if (!last.detail || last.detail.length === 0) {
+    // Pas de détail question par question disponible pour cette tentative : on affiche juste le score.
+    const pct2 = Math.round(last.correct / last.total * 100);
+    list.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:20px;">
+        <div style="font-family:'Syne',sans-serif;font-size:0.85rem;color:var(--gold);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${topic?.name || topicId}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--grey);margin-top:3px;">${batch?.range || batchId} · ${last.dateStr} · mode ${last.mode}</div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;margin-top:10px;color:${pct2>=70?'var(--green)':pct2>=50?'var(--gold)':'var(--red)'};">${pct2}% <span style="font-size:0.9rem;color:var(--grey);font-weight:400;">${last.correct}/${last.total}</span></div>
+        <div style="font-size:0.8rem;color:var(--grey);margin-top:10px;">Détail question par question non disponible pour cette session (ancienne tentative sans enregistrement détaillé).</div>
+      </div>`;
+    return;
+  }
 
   // Header de révision
   const correct = last.detail.filter(d => d.isCorrect).length;
