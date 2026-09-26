@@ -393,8 +393,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <!-- PAUSE OVERLAY -->
 <div class="ov" id="pauseOv">
   <h2>⏸ Session en pause</h2>
-  <p>Le chrono est arrêté. Reprenez quand vous êtes prêt.</p>
-  <button class="btn btn-g" onclick="togglePause()">▶ Reprendre</button>
+  <p>Le chrono est arrêté. Votre progression est sauvegardée automatiquement.</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px">
+    <button class="btn btn-g" onclick="togglePause()">▶ Reprendre</button>
+    <button class="btn btn-o" onclick="quitToLibrary()">🏠 Quitter et sauvegarder</button>
+  </div>
 </div>
 
 <!-- RESULTS -->
@@ -3216,6 +3219,14 @@ function togglePause(){
   paused=!paused;
   if(paused) saveSession();
   document.getElementById('pauseOv').classList.toggle('on',paused);
+}
+
+function quitToLibrary(){
+  saveSession();
+  clearInterval(timerInt);
+  paused=false;
+  document.getElementById('pauseOv').classList.remove('on');
+  setScreen('library');
 }
 
 // ══════════════════════════════════════════════
