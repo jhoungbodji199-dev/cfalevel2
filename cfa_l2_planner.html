@@ -1015,19 +1015,21 @@
 </div>
 
 <script>
-/* ============ CONFIG DRIVE ============
-   1. Cree un OAuth Client ID "Web application" dans Google Cloud Console
-      (APIs & Services > Identifiants), avec comme origine JS autorisee
-      l'URL ou tu heberges ce fichier (ex: https://tonuser.github.io).
-   2. Active l'API Google Drive sur le projet.
-   3. Colle le Client ID ci-dessous.
-   Le scope drive.file limite l'acces aux seuls fichiers crees par cet outil.
-   Les scripts Google ne sont charges qu'au clic sur "Connecter" (pas au
-   chargement de la page) pour eviter tout crash si le reseau les bloque.
+/* ============ CONFIG DRIVE — RESTAURATION SÉCURISÉE ============
+   - Aucun fichier Drive n'est créé automatiquement.
+   - Une sauvegarde existante doit être unique avant toute écriture.
+   - L'ID du fichier validé est mémorisé localement.
+   - Un état local manifestement vide/neuf ne peut pas écraser une sauvegarde
+     Drive non vide.
+   - Le chargement depuis Drive remplace l'état local uniquement après
+     validation du fichier distant.
 */
 const CLIENT_ID = '351870287508-mpgb979e45hhe7r74kcjclhdtmfachfp.apps.googleusercontent.com';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const BACKUP_FILENAME = 'cfa_l2_planner_backup.json';
+
+const DRIVE_FILE_ID_KEY = 'cfa-l2-planner-drive-file-id';
+const LOCAL_SAFETY_KEY = 'cfa-l2-planner-safety-snapshot';
 let tokenClient = null, googleReady = false, accessToken = null;
 
 function loadExternalScript(src){
@@ -1070,92 +1072,276 @@ function ensureTokenClient(){
     callback: ''
   });
 }
+
 function setDriveStatus(text, connected){
   const el = document.getElementById('driveStatus');
   if(!el) return;
   el.textContent = text;
   el.classList.toggle('connected', !!connected);
 }
+
+function getSavedDriveFileId(){
+  try { return localStorage.getItem(DRIVE_FILE_ID_KEY) || ''; } catch(e){ return ''; }
+}
+
+function setSavedDriveFileId(id){
+  try {
+    if(id) localStorage.setItem(DRIVE_FILE_ID_KEY, id);
+    else localStorage.removeItem(DRIVE_FILE_ID_KEY);
+  } catch(e) {}
+}
+
+function countObjectKeys(v){
+  return v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).length : 0;
+}
+
+function stateWeight(s){
+  if(!s || typeof s !== 'object') return 0;
+  const days = countObjectKeys(s.dayLogs);
+  const weeks = countObjectKeys(s.weekDone);
+  const lms = countObjectKeys(s.lmChecked);
+  let hours = 0;
+  if(s.dayLogs && typeof s.dayLogs === 'object'){
+    Object.keys(s.dayLogs).forEach(function(day){
+      const entries = Array.isArray(s.dayLogs[day] && s.dayLogs[day].entries)
+        ? s.dayLogs[day].entries : [];
+      entries.forEach(function(e){
+        const h = Number(e && e.hours);
+        if(Number.isFinite(h) && h > 0) hours += h;
+      });
+    });
+  }
+  return days * 1000 + weeks * 100 + lms * 10 + Math.min(hours, 9999) / 10000;
+}
+
+function isValidPlannerState(data){
+  if(!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  if(data.dayLogs !== undefined && (typeof data.dayLogs !== 'object' || Array.isArray(data.dayLogs) || data.dayLogs === null)) return false;
+  if(data.weekDone !== undefined && (typeof data.weekDone !== 'object' || Array.isArray(data.weekDone) || data.weekDone === null)) return false;
+  if(data.lmChecked !== undefined && (typeof data.lmChecked !== 'object' || Array.isArray(data.lmChecked) || data.lmChecked === null)) return false;
+  return true;
+}
+
+function normalizePlannerState(data){
+  return {
+    dayLogs: (data && data.dayLogs && typeof data.dayLogs === 'object' && !Array.isArray(data.dayLogs)) ? data.dayLogs : {},
+    weekDone: (data && data.weekDone && typeof data.weekDone === 'object' && !Array.isArray(data.weekDone)) ? data.weekDone : {},
+    lmChecked: (data && data.lmChecked && typeof data.lmChecked === 'object' && !Array.isArray(data.lmChecked)) ? data.lmChecked : {}
+  };
+}
+
+function isMeaningfullyEmptyState(s){
+  return stateWeight(s) === 0;
+}
+
+function saveLocalSafetySnapshot(){
+  try{
+    localStorage.setItem(LOCAL_SAFETY_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      state: state
+    }));
+  }catch(e){ console.warn('snapshot local impossible', e); }
+}
+
 async function connectDrive(){
   if(CLIENT_ID.indexOf('TON_CLIENT_ID') === 0){
-    alert("Configure d'abord ton Client ID Google (voir commentaire CONFIG DRIVE en haut du script).");
-    return;
+    alert("Configure d'abord ton Client ID Google.");
+    return false;
   }
   if(location.protocol === 'file:'){
     setDriveStatus('ouvre le fichier via une URL http(s), pas en local', false);
-    alert("Google bloque la connexion quand le fichier est ouvert en local (file://). Heberge-le (ex: GitHub Pages) puis reessaie depuis cette URL.");
-    return;
+    alert("Google bloque la connexion quand le fichier est ouvert en local. Utilise la version GitHub Pages.");
+    return false;
   }
   try{
     setDriveStatus('connexion aux services Google...', false);
     await ensureGoogleReady();
-  }catch(e){
-    console.error(e);
-    setDriveStatus('echec chargement Google: '+(e && e.message ? e.message : 'inconnu'), false);
-    return;
-  }
-  try{
     ensureTokenClient();
   }catch(e){
     console.error(e);
-    setDriveStatus('Client ID invalide: '+(e && e.message ? e.message : 'inconnu'), false);
-    return;
+    setDriveStatus('echec chargement Google: '+(e && e.message ? e.message : 'inconnu'), false);
+    return false;
   }
-  tokenClient.callback = async (resp) => {
-    if(resp.error){
-      console.error(resp);
-      setDriveStatus('refus Google: '+resp.error+' (verifie l\'origine autorisee)', false);
+
+  return new Promise(function(resolve){
+    tokenClient.callback = async function(resp){
+      if(resp.error){
+        console.error(resp);
+        setDriveStatus('refus Google: '+resp.error, false);
+        resolve(false);
+        return;
+      }
+      accessToken = resp.access_token;
+      gapi.client.setToken({access_token: accessToken});
+      setDriveStatus('connecte', true);
+      resolve(true);
+    };
+    try{
+      tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+    }catch(e){
+      console.error(e);
+      setDriveStatus('echec ouverture popup: '+(e && e.message ? e.message : 'inconnu'), false);
+      resolve(false);
+    }
+  });
+}
+
+/* Recherche stricte : 0 = rien, 1 = OK, >1 = ambiguïté.
+   On n'utilise jamais arbitrairement files[0]. */
+async function findBackupFile(){
+  const savedId = getSavedDriveFileId();
+
+  if(savedId){
+    try{
+      const byId = await gapi.client.drive.files.get({
+        fileId: savedId,
+        fields: 'id,name,modifiedTime,trashed'
+      });
+      if(byId.result && !byId.result.trashed && byId.result.name === BACKUP_FILENAME){
+        return {file: byId.result, source:'saved-id'};
+      }
+    }catch(e){
+      console.warn('ID Drive mémorisé invalide, nouvelle recherche.', e);
+    }
+    setSavedDriveFileId('');
+  }
+
+  const res = await gapi.client.drive.files.list({
+    q: "name='"+BACKUP_FILENAME.replace(/'/g, "\\'")+"' and trashed=false",
+    fields: 'files(id,name,modifiedTime)',
+    orderBy: 'modifiedTime desc'
+  });
+  const files = (res.result && res.result.files) || [];
+
+  if(files.length === 0) return {file:null, source:'none'};
+  if(files.length > 1) return {file:null, source:'ambiguous', files:files};
+
+  setSavedDriveFileId(files[0].id);
+  return {file:files[0], source:'unique'};
+}
+
+async function readDriveBackup(file){
+  const res = await gapi.client.drive.files.get({fileId:file.id, alt:'media'});
+  const data = typeof res.result === 'object'
+    ? res.result
+    : JSON.parse(res.body);
+  if(!isValidPlannerState(data)) throw new Error('Sauvegarde Drive invalide.');
+  return normalizePlannerState(data);
+}
+
+async function saveToDrive(){
+  if(!accessToken || !googleReady){
+    const ok = await connectDrive();
+    if(!ok) return;
+  }
+
+  setDriveStatus('verification sauvegarde...', true);
+
+  try{
+    const found = await findBackupFile();
+
+    if(found.source === 'ambiguous'){
+      setDriveStatus('plusieurs sauvegardes : aucune écriture', false);
+      alert("Plusieurs fichiers '"+BACKUP_FILENAME+"' existent dans Drive. Aucune écriture n'a été faite pour éviter d'écraser le mauvais fichier.");
       return;
     }
-    accessToken = resp.access_token;
-    gapi.client.setToken({access_token: accessToken});
-    setDriveStatus('connecte', true);
-  };
-  try{
-    tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+
+    if(!found.file){
+      setDriveStatus('aucune sauvegarde existante : aucune creation', false);
+      alert("Aucune sauvegarde existante n'a été trouvée. Par sécurité, le planner ne crée pas automatiquement un nouveau fichier Drive.");
+      return;
+    }
+
+    const remote = await readDriveBackup(found.file);
+    const local = normalizePlannerState(state);
+
+    /* Protection majeure : un état local vide ne peut jamais écraser
+       une sauvegarde Drive non vide. */
+    if(isMeaningfullyEmptyState(local) && !isMeaningfullyEmptyState(remote)){
+      setDriveStatus('ecriture bloquee : local vide', false);
+      alert("Écriture bloquée : ton planner local est vide alors que la sauvegarde Drive contient des données. Utilise d'abord « Charger ».");
+      return;
+    }
+
+    /* Protection supplémentaire : si le local a brutalement perdu beaucoup
+       de données, on bloque plutôt que d'écraser Drive. */
+    const lw = stateWeight(local);
+    const rw = stateWeight(remote);
+    if(rw > 0 && lw < rw * 0.5){
+      setDriveStatus('ecriture bloquee : donnees locales insuffisantes', false);
+      alert("Écriture bloquée : les données locales semblent très incomplètes par rapport à Drive. Charge d'abord la sauvegarde.");
+      return;
+    }
+
+    saveLocalSafetySnapshot();
+
+    const payload = JSON.stringify(Object.assign({}, local, {
+      savedAt: new Date().toISOString()
+    }));
+    const boundary = 'cfa314159265';
+    const metadata = {name: BACKUP_FILENAME, mimeType:'application/json'};
+    const body =
+      '--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n'+
+      '--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+payload+'\r\n'+
+      '--'+boundary+'--';
+
+    await gapi.client.request({
+      path:'/upload/drive/v3/files/'+found.file.id+'?uploadType=multipart',
+      method:'PATCH',
+      headers:{'Content-Type':'multipart/related; boundary='+boundary},
+      body:body
+    });
+
+    setDriveStatus('sauvegarde OK', true);
   }catch(e){
     console.error(e);
-    setDriveStatus('echec ouverture popup: '+(e && e.message ? e.message : 'inconnu'), false);
+    setDriveStatus('echec sauvegarde : '+(e && e.message ? e.message : 'inconnu'), false);
+    alert("Sauvegarde non effectuée. Le fichier Drive existant n'a pas été remplacé.");
   }
 }
-async function findBackupFile(){
-  const res = await gapi.client.drive.files.list({
-    q: `name='${BACKUP_FILENAME}' and trashed=false`,
-    fields: 'files(id,name,modifiedTime)'
-  });
-  return (res.result.files && res.result.files[0]) || null;
-}
-async function saveToDrive(){
-  if(!accessToken || !googleReady){ await connectDrive(); return; }
-  setDriveStatus('sauvegarde...', true);
-  const payload = JSON.stringify(Object.assign({}, state, {savedAt: new Date().toISOString()}));
-  const existing = await findBackupFile();
-  const boundary = 'cfa314159265';
-  const metadata = {name: BACKUP_FILENAME, mimeType: 'application/json'};
-  const body =
-    '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) + '\r\n' +
-    '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + payload + '\r\n' +
-    '--' + boundary + '--';
-  const path = existing ? ('/upload/drive/v3/files/' + existing.id + '?uploadType=multipart') : '/upload/drive/v3/files?uploadType=multipart';
-  const method = existing ? 'PATCH' : 'POST';
-  try{
-    await gapi.client.request({path: path, method: method, headers:{'Content-Type': 'multipart/related; boundary=' + boundary}, body: body});
-    setDriveStatus('sauvegarde OK', true);
-  }catch(e){ console.error(e); setDriveStatus('echec sauvegarde', false); }
-}
+
 async function loadFromDrive(){
-  if(!accessToken || !googleReady){ await connectDrive(); return; }
-  setDriveStatus('chargement...', true);
+  if(!accessToken || !googleReady){
+    const ok = await connectDrive();
+    if(!ok) return;
+  }
+
+  setDriveStatus('recherche sauvegarde...', true);
+
   try{
-    const file = await findBackupFile();
-    if(!file){ setDriveStatus('aucune sauvegarde trouvee', true); return; }
-    const res = await gapi.client.drive.files.get({fileId: file.id, alt:'media'});
-    const data = typeof res.result === 'object' ? res.result : JSON.parse(res.body);
-    state = {dayLogs: data.dayLogs || {}, weekDone: data.weekDone || {}, lmChecked: data.lmChecked || {}};
-    await saveState(); render();
-    setDriveStatus('charge OK', true);
-  }catch(e){ console.error(e); setDriveStatus('echec chargement', false); }
+    const found = await findBackupFile();
+
+    if(found.source === 'ambiguous'){
+      setDriveStatus('plusieurs sauvegardes : aucune restauration', false);
+      alert("Plusieurs fichiers '"+BACKUP_FILENAME+"' existent dans Drive. Aucune restauration automatique n'a été faite pour éviter de choisir le mauvais.");
+      return;
+    }
+
+    if(!found.file){
+      setDriveStatus('aucune sauvegarde trouvee', false);
+      alert("Aucune sauvegarde '"+BACKUP_FILENAME+"' n'a été trouvée.");
+      return;
+    }
+
+    const remote = await readDriveBackup(found.file);
+    if(isMeaningfullyEmptyState(remote)){
+      setDriveStatus('sauvegarde Drive vide : restauration bloquee', false);
+      alert("La sauvegarde Drive trouvée est vide. Par sécurité, elle n'a pas remplacé ton planner.");
+      return;
+    }
+
+    saveLocalSafetySnapshot();
+    state = remote;
+    await saveState();
+    render();
+    setDriveStatus('restauration Drive OK', true);
+  }catch(e){
+    console.error(e);
+    setDriveStatus('echec chargement : '+(e && e.message ? e.message : 'inconnu'), false);
+    alert("Restauration impossible. Ton état actuel n'a pas été remplacé.");
+  }
 }
+
 (function wireDriveButtons(){
   const c = document.getElementById('btnConnect');
   const s = document.getElementById('btnSave');
