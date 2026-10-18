@@ -78,10 +78,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .vignette-panel::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px;opacity:.5}
 .vig-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
 .vig-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text);margin-bottom:12px;line-height:1.3}
-.vig-text{font-size:14px;line-height:1.8;color:#354940;white-space:pre-wrap}
+.vig-text{font-size:var(--vigfs,14px);line-height:1.75;color:#354940;white-space:pre-wrap}
 .vig-seg{margin-bottom:12px}
 .vig-seg-tbl{margin:4px 0 14px;white-space:normal}
-.vig-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+.vig-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:calc(var(--vigfs,14px) - 2px)}
 .vig-tbl th{background:rgba(201,168,76,.15);color:var(--gold2);font-weight:600;padding:7px 9px;border:1px solid rgba(201,168,76,.25);text-align:left;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px}
 .vig-tbl td{padding:8px 10px;border:1px solid rgba(52,82,67,.12);color:var(--text)}
 .vig-tbl tr:nth-child(even) td{background:rgba(24,51,47,.025)}
@@ -466,6 +466,24 @@ body.theme-dark .hentry-meta,body.theme-dark .sub,body.theme-dark .rl,body.theme
 body.theme-dark .vig-highlight{background:#ffe66b!important;color:#24200d!important}
 body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564c}
 
+
+/* ── Mode examen : vignette large, panneaux à défilement indépendant, plein écran ── */
+.viewctl{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.vc-btn{padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--dim);font-size:12px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.vc-btn:hover{border-color:var(--gold);color:var(--gold)}
+.vc-lbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--dim);min-width:34px;text-align:center}
+@media(min-width:801px){
+  body.in-quiz{overflow:hidden}
+  body.in-quiz .wrap{max-width:none;width:100%;height:100vh;padding:8px 14px;display:flex;flex-direction:column}
+  body.in-quiz .hdr{display:none}
+  body.in-quiz .drive-bar{margin-bottom:6px}
+  body.in-quiz #scr-quiz.on{display:flex;flex-direction:column;flex:1;min-height:0}
+  body.in-quiz .qhdr{margin-bottom:8px}
+  body.in-quiz .quiz-layout{flex:1;min-height:0;align-items:stretch;gap:14px;grid-template-columns:minmax(0,var(--vigw,1.7fr)) minmax(0,1fr)}
+  body.in-quiz .vignette-panel{position:static;max-height:none;height:100%;overflow-y:auto;padding:18px 24px}
+  body.in-quiz .question-panel{height:100%;min-height:0;overflow-y:auto;padding-right:4px}
+}
+@media(max-width:800px){body.in-quiz .wrap{max-width:none;padding:10px}}
 </style>
 </head>
 <body>
@@ -532,6 +550,9 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
       <button class="opt sel" data-v="seq" onclick="pickOrd(this)">Séquentiel</button>
       <button class="opt" data-v="rand" onclick="pickOrd(this)">Aléatoire</button>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);margin:2px 0 14px;cursor:pointer">
+      <input type="checkbox" id="optFullscreen" checked onchange="setFullPref(this.checked)"> Passer en plein écran au démarrage
+    </label>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <button class="btn btn-g" onclick="startQuiz()">▶ Démarrer la session</button>
       <button class="btn btn-o" onclick="setScreen('library')">← Retour</button>
@@ -544,7 +565,15 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 <div id="scr-quiz" class="scr">
   <div class="qhdr">
     <span class="ptxt" id="ptxt">Vignette 1 / 11</span>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="viewctl">
+        <button class="vc-btn" onclick="vigFont(-1)" title="Réduire la police de la vignette">A−</button>
+        <span class="vc-lbl" id="vigFsLabel">14px</span>
+        <button class="vc-btn" onclick="vigFont(1)" title="Agrandir la police de la vignette">A+</button>
+        <button class="vc-btn" onclick="vigWidth(-1)" title="Réduire la largeur de la vignette">◧−</button>
+        <button class="vc-btn" onclick="vigWidth(1)" title="Élargir la vignette">◧+</button>
+        <button class="vc-btn" id="fsBtn" onclick="toggleFullscreen()" title="Plein écran (F11 fonctionne aussi)">⛶ Plein écran</button>
+      </div>
       <div class="timer" id="timerBadge"><span id="tdisp">2:12:00</span></div>
       <button class="pause-btn" onclick="togglePause()">⏸ Pause</button>
     </div>
@@ -3380,6 +3409,129 @@ const MOCK6_S2 = [
   }
 ];
 
+// ── Mock 6 : texte intégral (d'après les PDF Session 1 et Session 2) et exhibits dans l'ordre d'origine
+MOCK6_S1[0].parts = [
+  "Collin Wang is a portfolio manager screening companies in the transportation industry for inclusion in his firm's mid-cap equity fund.\n\nWang selects three companies to consider for his fund. The first two are US-based companies, Tupelo Transport Inc. and KXC Inc., that prepare their financial statements in accordance with US GAAP. Both companies provide transportation services across the US and Mexico. The third company, Grupo TranspoRio, is a Mexico-based company that provides transportation services throughout Mexico and the southwestern US. Grupo prepares its financial statements in accordance with IFRS.\n\nWang first reviews Tupelo and Grupo. He considers which price multiple would be most appropriate to use when comparing the two companies.\n\nWang observes that the justified price-to-sales (P/S) ratio for Tupelo is lower than for KXC. He uses the information in Exhibit 1 to determine which metric best supports Tupelo's lower justified P/S ratio.",
+  {"t": 0},
+  "Wang summarizes in Exhibit 2 key financial statement data (in $ millions) of Tupelo for the year just ended. Tupelo's current price per share is $191.60 and there are 103.7 million shares outstanding. Wang calculates the company's enterprise value to sales ratio, assuming the market value of long-term debt equals its book value.",
+  {"t": 1},
+  "As part of his screening process, Wang examines a momentum indicator for the three companies. The indicator is calculated by dividing the difference between reported earnings and the mean of analysts' earnings forecasts by the dispersion in the analysts' forecasts."
+];
+MOCK6_S1[1].parts = [
+  "Paul Lee is a fixed income analyst for a hedge fund. He is analyzing bonds issued by Pluto Inc., a US corporation. To value these bonds, Lee uses the binominal tree shown in Exhibit 1, which includes an OAS of 2%. In the tree, the branching from each node to a high state and to a low state occurs with equal probabilities.\n\nExhibit 1:\nLee analyzes 2-year annual coupon bonds issued by Pluto. A description of the bonds is provided below in Exhibit 2. Each bond has a par value of $1,000, and all floating-rate bonds (floaters) have annual resets. The coupon rate for all the floaters is reset at the beginning of the period, and was just reset.\n\nExhibit 2:",
+  {"t": 0},
+  "Bond A has a current market price of $1,010. Pluto's shares currently trade at $9.53 per share. Lee expects Pluto's shares to decrease in value by 20% over the next year, bringing shares below the current conversion price.\n\nAfter valuing the bonds, Lee analyzes the following two independent scenarios:\n\u2022 Scenario 1: a steepening of the 1-year reference rate forward curve due to a decrease in rates at or under 2 years, and an increase in rates over 2 years.\n\u2022 Scenario 2: an increase in the volatility of the 1-year forward reference rate."
+];
+MOCK6_S1[2].parts = [
+  "James Barber, a macro strategist, is developing models to help forecast macroeconomic data. Barber has gathered quarterly data on Country A's labor productivity and is modeling that data using linear regression. The model (Model 1) has t-statistics slightly above the critical value and has an R-squared of 0.0976. The residuals appear to be predictable over time, with quarterly labor productivity figures consistently lower than the forecasted values since the 2008 financial crisis. Barber uses the Durbin-Watson test statistic to evaluate the regression.\n\nBarber then turns his attention to household savings rates (SavingsRate). He is reviewing the results of Model 2, an AR(1) model. In reviewing the data, Barber determines that the household savings rate is mean-reverting. Selected results of the regression are shown in Exhibit 1.",
+  {"t": 0},
+  "Barber has built a machine-learning model (Model 3) to gather insight into consumer sentiment. Model 3 performs well on the training dataset but produces a high number of false positives and false negatives on the cross-validation dataset. To improve Model 3's performance, Barber is considering the following two strategies:\n\u2022 Strategy 1: Increase regularization\n\u2022 Strategy 2: Increase the number of features\n\nFollowing some adjustments and re-training, Barber produces the confusion matrix shown in Exhibit 2 to evaluate the performance of Model 3. He calculates the F1 score for the model.\n\nFollowing some adjustments and re-training, Barber produces the confusion matrix shown in Exhibit 2 to evaluate the performance of Model 3. He calculates the F1 score for the model.",
+  {"t": 1}
+];
+MOCK6_S1[3].parts = [
+  "Jarrod MacQuoid is meeting with several clients regarding their fixed-income investments. All bonds held in portfolios have a par value of 100. The current interest rates in their home country are presented in Exhibit 1.",
+  {"t": 0},
+  "Client 1\nClient 1 anticipates a large cash inflow in one year. He plans to use some of the new cash to build a summer home in three years, and wants to know what the rate would be for a 2-year zero-coupon, option-free and default-free bond issued one year from now.\n\nClient 2\nClient 2 is a portfolio manager at a small bank who asks MacQuoid to determine the arbitrage-free value of a bond he is considering purchasing. The bond is a 3-year, 6.0% annual-pay coupon, option-free and default-free bond.\n\nClient 3\nClient 3 runs a fixed-income fund that invests in a foreign country, and asks MacQuoid for advice on the fund's strategy. The client has recently started using a new interest-rate model which he describes to MacQuoid.\n\n\u201cWe perform our interest-rate modeling using an equilibrium term-structure model. Our model assumes that a single factor drives all yield curve movements, and we continually analyze market factors to determine the mispricing of bonds. Although our model cannot be calibrated to current market data, it does permit mean reversion of rates, assumes constant volatility, and allows negative interest rates.\"\n\nMacQuoid mentions to Client 3 that he can also use the binomial interest rate tree to value bonds. MacQuoid illustrates how the tree in Exhibit 2 can be used to value Bond X, a 2-year, 4% annual-pay coupon, option-free and default-free bond. MacQuoid assumes the branching from each node occurs with equal probability.",
+  {"t": 1}
+];
+MOCK6_S1[4].parts = [
+  "Megan Pey is an investment analyst covering the financial sector. Pey is reviewing Sungda Group, a listed holding company that operates Sungda Bank and Sungda Insurance. The group reports under US GAAP in USD and is subject to the Basel III requirements.\n\nSungda Bank\nPey applies the CAMELS approach (Capital adequacy, Asset quality, Management capabilities, Earnings sufficiency, Liquidity position, and Sensitivity to market risk) to analyze Sungda Bank. Pey's research focuses particularly on the earnings quality and liquidity risk of the bank. She examines management discretion and estimates used in fair value measurements. Pey compares the year-end fair value hierarchy data (in USD millions) of Sungda Bank and two competitors, Topliska Bank and Vibetera Bank, for the most recent year in Exhibit 1.",
+  {"t": 0},
+  "Pey lists three additional observations that she considers including as a part of her CAMELS analysis.\n\u2022 Observation 1: Compared to its banking peers, Sungda Bank's CEO is paid a moderate base salary, with remaining compensation paid as equity-based incentives.\n\u2022 Observation 2: The assets under management at the bank's trust department are sizable and the fees generated contribute materially to the bank's business performance.\n\u2022 Observation 3: The board has appointed a rigorous risk management committee that consists of several sub-committees to provide oversight on various internal control aspects.\n\nSungda Insurance\nPey compares Sungda Insurance, a company primarily offering property and casualty insurance products, with two competitors, Treetop Insurance and Umbrella Insurance.\n\nTo assess their respective underwriting operations, Pey assembles the information in Exhibit 2.",
+  {"t": 1},
+  "Sungda Group recently announced plans to sell Sungda Insurance. To understand the group's decision, Pey notes the following developments in the market where Sungda Insurance operates.\n\u2022 Development 1: The market is gradually trending to a \u201chard\" pricing market.\n\u2022 Development 2: The local regulator is raising minimum capital requirements on insurers.\n\u2022 Development 3: Global reinsurers are reducing the number of policies accepted from this market."
+];
+MOCK6_S1[5].parts = [
+  "Clara Nagle, a portfolio manager at an investment firm, prepares a report for clients invested in the firm's Global Equities Fund (GEF). Her report includes the following daily market estimates:\n\u2022 Mean daily return: 0.04%\n\u2022 Daily standard deviation of returns: 1.094%\n\u2022 5% daily parametric VaR: 1.765%\n\u2022 5% daily incremental VaR (IVaR) from a potential 10% increase in emerging market equities: 0.345%\n\nOne of her clients, a charitable foundation, has $4.5 million invested in GEF. The foundation asks for an estimate of the 5% annual parametric VaR for its investment in GEF, which Nagle calculates assuming 250 trading days in a year. In the standard normal distribution, a 5% VaR is 1.65 standard deviations below the expected value. The chair of the foundation's board contacts Nagle and asks her to interpret the IVaR metric provided in the report.\n\nNagle has developed a new fund focused on European equities, with a strategy focused on managing exposure to five factors. She backtests the strategy using 20 years of historical data. A Monte Carlo simulation is also used whereby the historical data is calibrated using random samples from a multivariate normal distribution of returns for the five factors. Exhibit 1 shows the Sharpe ratio and annual conditional VaR (CVaR) resulting from the backtest and Monte Carlo simulation approaches.",
+  {"t": 0},
+  "Nagle considers why the two approaches have produced different CVaR results. Nagle also plans to establish a new fund investing in global technology equities. In determining her strategy for the fund, she develops 20 different strategies using factor-based models. The number of factors used in the different strategies ranges from five to nine. Nagle obtains point-in-time data going back 15 years and backtests all 20 strategies. After examining the results, she recommends to her firm's management that the new fund use the strategy that performed best in the backtests."
+];
+MOCK6_S1[6].parts = [
+  "Amelia Shah is an analyst covering consumer goods for an investment management firm. She is following three companies that produce baby care products: Tengu Ltd., P\u00e9gase S.A., and Unicorn Inc. They are all similarly sized multinational companies reporting under IFRS.\n\nTengu, P\u00e9gase, and Unicorn have similar ROEs that are above the industry average. Shah applies the mean reversion principle to forecast the trends of their future ROEs, based on the earnings components shown in Exhibit 1.",
+  {"t": 0},
+  "Shah then assesses the outputs of the Beneish model M-scores and the Altman model Z-scores in Exhibit 2.",
+  {"t": 1},
+  "Unicorn acquired a 50% equity interest in Antler Co. for USD 20 million at the end of the most recent year, but it did not assume control over Antler. Shah summarizes Antler's balance sheet (in USD millions) for the most recent year in Exhibit 3.",
+  {"t": 2},
+  "Finally, Shah calculates Tengu's cash-flow-based accruals ratio for the most recent year, using the data summarized in Exhibit 4.",
+  {"t": 3}
+];
+MOCK6_S1[7].parts = [
+  "Suzanne Badie, CFA, is a sell-side analyst covering the pharmaceutical industry for Seaside, an investment bank.\n\nBadie attends a medical conference, where she hears a conference participant describe a medical study that reports a link between a new drug and the quality of sleep. When she returns to her office, Badie downloads the medical study and includes its findings as part of her analysis in her next industry report. In this report, she cites the study but does not mention the medical conference.\n\nBadie prepares an analysis of Midsound Pharma. To help determine her recommendation, she uses the firm's approved quantitative model, which she did not create, as well as her own due diligence. She concludes that a \"buy\" recommendation on Midsound is appropriate and forecasts a 10% increase in its share price.\n\nShortly after Badie's recommendation is issued, Midsound suffers an unexpected quarterly loss and its share price declines by 25%. One of Seaside's retail clients, who is also a CFA charterholder, accuses Badie of violating the Standard relating to diligence and reasonable basis because Badie did not develop the quantitative model she used in analyzing Midsound, and because the value of the shares subsequently declined in contrast to her forecast.\n\nFollowing the share sell-off, Midsound's CEO Troy Miller, CFA, decides that an acquisition by a competitor would be the best solution to increase the share price. Prior to any conversations with potential bidders, he announces that Midsound is already in negotiations with multiple acquirers. Miller's announcement leads to an immediate jump in Midsound's share price as the number of investor buy orders increases.\n\nBadie plans to retire soon. In her spare time, she writes a proposal for a non-fiction book based on a behind-the-scenes look at the investment banking industry. She signs a book deal with a national publisher prior to leaving the investment bank. The book will rely upon the skills and experience she gained at Seaside, and provide readers with Badie's opinions on how to evaluate investments."
+];
+MOCK6_S1[8].parts = [
+  "James Goodwin is a corporate restructuring consultant.\n\nGoodwin is hired by the board of Company X, a US clothing manufacturer that sells to three large US retailers. The board is considering several potential actions but is concerned about increasing the company's current WACC. The board asks Goodwin which of the following three actions would increase WACC in the short term:\n\nAction 1: Expand the customer base from three retailers to five.\n\nAction 2: Add a new children's clothing product line which has higher revenue potential and risk than current product lines.\n\nAction 3: Buy back 20% of the company's outstanding option-free debt and issue putable bonds, leaving overall leverage unchanged.\n\nGoodwin compares the cost of equity of Company Y, a privately held US company, under two different methods: the build-up approach and the expanded CAPM. For Company Y, the beta of a peer group of public companies is 0.8, the industry risk premium is 0.4%, and the equity risk premium is 2.0%.\n\nGoodwin then computes the cost of debt for Company Z, an A-rated US chemical manufacturer. The company's debt consists of 7-year maturity, 5.00% coupon, option-free bonds which are very thinly traded. Goodwin uses a matrix approach to estimate Company Z's cost of debt and wants to adjust for its lack of liquidity. In Exhibit 1, he compiles average YTM data from highly liquid bonds of other companies in the same industry with the same credit rating.",
+  {"t": 0},
+  "Company Z is also considering acquiring a target company for $72 per share. Management asks Goodwin to assess whether this offer would fairly value the target company. Goodwin collects data in Exhibit 2 for the target company and two recent takeovers of similar companies.",
+  {"t": 1},
+  "To estimate a fair takeover price for the target company, Goodwin performs a comparable transaction analysis using a 60% weight on the cash flow multiple and a 40% weight on the earnings multiple. Goodwin will conclude that the $72 offer fairly values the target company if the offer price is within $5 of his estimated fair takeover price."
+];
+MOCK6_S1[9].parts = [
+  "Judith Cooper is a portfolio manager at Minster, a hedge fund specializing in commodities. She is evaluating several trading strategies and reviewing her portfolio's positions. Cooper considers futures trading strategies for six base metals. Her goal is to implement a time-series momentum strategy. The recent performance of several metal futures is presented in Exhibit 1. Cooper expects a contraction in global GDP growth over the next several months.",
+  {"t": 0},
+  "Minster's research department has identified the following potential futures trading strategies:\n\u2022 Strategy 1: Long positions in copper, aluminum, nickel, zinc, and lead; a short position in tin\n\u2022 Strategy 2: Long positions in copper, aluminum, and nickel; short positions in zinc, lead, and tin\n\u2022 Strategy 3: Short positions in all six metals\n\nNext, Cooper reviews the portfolio's long energy futures positions. She collects the relevant closing price data ($ per unit) in Exhibit 2.",
+  {"t": 1},
+  "Cooper carries out further analysis of Brent crude oil. She observes that the direct storage cost of Brent crude oil over the farther-term is $3.50 per barrel.\n\nAfter analyzing crude oil, Cooper concludes that the price of West Texas Intermediate (WTI) and heavy crude oil will decrease by 3% and 6%, respectively, over the next several months. In addition, she expects that volatility for WTI will be lower than market expectations. Based on this, Cooper considers the following trades:\n\u2022 Trade 1: A short volatility swap on WTI\n\u2022 Trade 2: A basis swap which is short on WTI and long on heavy crude oil\n\u2022 Trade 3: A long position in an excess return swap on WTI that is based on the current price"
+];
+MOCK6_S1[10].parts = [
+  "Georg Malshuk manages a multi-currency portfolio. To increase returns, he has introduced several currency strategies.\n\nMalshuk buys a GBP 5 million zero-coupon bond with one year to maturity. At the same time, he completely hedges the exchange rate risk with a 1-year currency forward, buying USD at the no-arbitrage forward rate of 1.3367 USD/GBP. The 1-year USD interest rate is 1.72% and the 1-year GBP interest rate is 0.72%.\n\nSix months later, as part of a periodic reporting requirement, he marks the USD/GBP forward contract to market based on the information in Exhibit 1.",
+  {"t": 0},
+  "Malshuk analyzes carry strategies in different currencies and enters a 1-year carry trade involving the Brazilian real (BRL) and the USD. Exhibit 2 provides details relating to the trade.",
+  {"t": 1},
+  "Malshuk researches the fiscal and monetary policies of emerging market countries that have high capital mobility. Based on this research and the Mundell-Fleming model, he prepares a list of the countries whose currencies are expected to appreciate against the USD."
+];
+MOCK6_S2[0].parts = [
+  "Gordon Behie, CFA, recently set up his own investment advisory firm based in Country 1. Behie's brother owns Aardvark Securities, a brokerage firm with many connections in the international business community. To help build his new business, Behie asks his brother to refer potential clients to him. The first referral is Bernice P\u00e9pin, a high-net-worth individual who is risk averse and is domiciled in Country 2. The brother also states that if Behie directs all of his clients' trades through Aardvark, the brother will discount the trading fees that Behie's new firm would have to pay.\n\nBehie meets with P\u00e9pin, who provides full details of her portfolio. Behie realizes that the portfolio's stock allocation is heavily exposed to the energy sector. On a follow up call with P\u00e9pin, Behie proposes reducing this exposure through a strategy involving the sale of futures contracts on energy commodities. Behie tells P\u00e9pin that while futures contracts have several risks, they may also have benefits for her portfolio. Behie uses a proprietary model to select which and how many futures contracts to use for this proposed strategy. He tells P\u00e9pin the details of his model and the specific inputs he uses to select these futures contracts for her portfolio.\n\nAfter their meeting ends, Behie places P\u00e9pin's written IPS into his files for record retention purposes. He also puts the recording of the entire call into an electronic filing system. However, Behie decides not to retain a written description of the inputs used in his proprietary model or any of his written notes made during the call.\n\nShortly thereafter, P\u00e9pin contacts Behie and asks him to place a limit order to buy shares in XYZ Ltd., a liquid large-cap stock. The current price of XYZ stock is $50 per share and P\u00e9pin's limit order is to buy at $45 per share. Behie decides to sell some of his personal holdings in XYZ stock to raise money for his son's education. He first places his personal order to sell XYZ stock at the current market price, and then places P\u00e9pin's limit-buy order."
+];
+MOCK6_S2[1].parts = [
+  "Anastasia Gataki, CFA, was recently hired as a senior investment advisor at Crete Capital (Crete), a large private wealth management firm with discretionary and nondiscretionary accounts. Crete has adopted the Standards as part of its ethics and compliance policy. On her first day with the firm, Crete's marketing team asks Gataki to approve new marketing materials that will be distributed to current and prospective clients of the firm. The materials include the following three statements about Gataki's performance record:\n\u2022 Statement 1: Gataki has generated average annual returns of over 13% for her clients.\n\u2022 Statement 2: Two accounts were terminated one year prior to the end of the measurement period and are included in the calculation of average annual returns.\n\u2022 Statement 3: Additional assumptions and data underlying the calculation of average annual returns are publicly available on Crete's website.\n\nGataki is asked to discuss the CFA Program at a training session for new interns. Gataki encourages the attendees to pursue the charter, but she warns them that the supplementary study materials she purchased from a well-known exam preparation provider did not help much, particularly for the Ethics questions in the exams. Gataki elaborates that all three exams were significantly more difficult than she expected, but she is proud to say that she passed each level of the CFA exam on her first attempt.\n\nGataki receives an e-mail notifying her that Crete has just downgraded its recommendation on HydraPharma stock from \"hold\" to \u201csell.\u201d She immediately sends an e-mail with the updated recommendation to all of her clients. She then sells all shares of HydraPharma held in discretionary accounts. Gataki receives an automatic response from one of Crete's largest nondiscretionary clients, Theo Scala, stating that he is on vacation and unable to receive e-mails. Gataki calls Scala on his cell phone to inform him of the HydraPharma rating downgrade because she knows that he has a large position in the company.\n\nOn the call with Gataki, Scala states that he wants to sell all his shares in HydraPharma immediately. He requests that this trade and all future trades for his account be routed through QuickTrader, a small broker recently acquired by one of Scala's business associates. Gataki explains that, although the commissions at QuickTrader are equivalent to those charged by Crete's current broker, AlphaBroker, she knows that QuickTrader's execution is inferior to that of AlphaBroker. The phone connection to Scala is then lost and subsequent attempts to reconnect are unsuccessful. Gataki sends an e-mail to Scala documenting their conversation and decides whether to immediately place the sell order."
+];
+MOCK6_S2[2].parts = [
+  "Elana Grosky is writing a report on Country A, a developed nation with a strong industrial base and a large financial sector.\n\nGrowth in Country A\nGrosky uses the labor productivity growth accounting equation and the selected data for Country A in Exhibit 1 to update her estimate of the growth rate in Country A's potential GDP.",
+  {"t": 0},
+  "Grosky estimates a 1.0% long-term growth rate in Country A's labor force. She summarizes other labor-force characteristics of Country A as follows:\n\u2022 Declining average hours worked\n\u2022 Stable labor force participation rate\n\u2022 Net immigration\n\u2022 High percentage of population aged over 65\n\u2022 Low percentage of population aged under 15\n\nGrosky estimates that the output gap, defined as the difference between the real growth rate in potential GDP and short-term real GDP growth, has widened by 1.3% as a result of the following revisions: Grosky estimates that the output gap, defined as the difference between the real growth rate in potential GDP and short-term real GDP growth, has widened by 1.3% as a result of the following revisions:\n\u2022 A 0.3% higher estimated real growth rate in potential GDP\n\u2022 A 1.0% lower estimate of short-term real GDP growth\n\nGrosky studies a report written by the research department at Country A\u2019s central bank. The report strongly supports the idea of constant returns to aggregate capital accumulation in Country A. Based on this, the research department recommends that, in order to achieve a permanent increase of the growth rate in output per worker, the government should develop appropriate policies aimed at increasing savings rates."
+];
+MOCK6_S2[3].parts = [
+  "Carol Oosthuizen is a portfolio manager based in South Africa. She allocates part of her investment assets to ETFs. Oosthuizen evaluates several domestically listed emerging market ETFs as possible investments. The ETFs have varying levels of commissions, bid-ask spreads, and management fees. Oosthuizen intends to hold the ETF as a long-term investment in her portfolio. Given her holding period, Oosthuizen considers which costs are most relevant when selecting which ETF to invest in.\n\nOosthuizen notes that in one of her portfolios, the manager of the actively managed funds in the portfolio has changed their asset allocations. This resulted in a temporary underweighting in real estate. The changes did not however breach the target weight thresholds of Oosthuizen's portfolio. Oosthuizen would like to retain the existing manager allocation and given this, decides to invest in a real estate ETF as a tactical strategy to fill this temporary gap in her desired strategic exposure.\n\nOosthuizen next evaluates the expected performance of ETF Echo using a three-factor macroeconomic model. The market forecast expected return for ETF Echo is 5.4%. Oosthuizen uses the information on the model's three factors in Exhibit 1 to calculate the ETF's expected return if her macroeconomic forecasts are realized.",
+  {"t": 0},
+  "Finally, Oosthuizen analyzes ETF Foxtrot using a different three-factor model with the factor sensitivities and returns shown in Exhibit 2. The ETF has an active return from security selection of 1.85%.",
+  {"t": 1}
+];
+MOCK6_S2[4].parts = [
+  "Emily Tran, an equity analyst, uses free cash flow valuation approaches to evaluate three companies: Aspen, Silverton, and Durango.\n\nTran examines several characteristics of Aspen and makes the following observations. First, Aspen's dividend level differs significantly from the company's capacity to pay dividends. Second, Aspen has a controlling investor who owns 60% of the outstanding voting stock. Finally, Aspen has debt outstanding and the company's capital structure is expected to change. Tran determines that using an FCFF model would be a more appropriate approach than FCFE to value Aspen's equity.\n\nTran collects the following information to compute Aspen's FCFF:\n\u2022 Cash flow from operations: \u20ac175 million\n\u2022 Interest expense included in operating cash flow: \u20ac24 million\n\u2022 Investment in working capital: \u20ac26 million\n\u2022 Investment in fixed capital: \u20ac80 million\n\u2022 Tax rate: 25%\n\nNext, Tran examines Silverton and computes both FCFF and FCFE by adjusting net income. She observes that Silverton recently reported the following non-cash transactions:\n\u2022 \u20ac25 million impairment of intangibles\n\u2022 \u20ac25 million income from the reversal of a restructuring charge\n\u2022 \u20ac15 million net gain from non-operating activities\n\nTran estimates Silverton's firm value by using a constant-growth FCFF model and the following information:\n\u2022 Current FCFF: \u20ac240 million\n\u2022 Market value of debt: \u20ac1.5 billion\n\u2022 Sustainable growth rate of FCFF: 4%\n\u2022 WACC: 7%\n\u2022 Required return on equity: 8%\n\nFinally, Tran examines Durango, which has recently announced a plan to issue debt to repurchase common stock. Tran considers whether this plan will affect future FCFE or FCFF."
+];
+MOCK6_S2[5].parts = [
+  "Rose Spencer works as a portfolio manager for Hutch Investments. She is reviewing an existing fixed-income portfolio and designing a new actively managed portfolio.\n\nGlobal Fixed Income Portfolio\nSpencer starts by evaluating the nominal and inflation-adjusted default-free, zero-coupon bonds issued by Country A. As part of her analysis, Spencer determines the 10-year break-even inflation rate for Country A based on the market consensus forecast. Following her review, Spencer believes that the level of uncertainty implied by the consensus forecast is too high. She performs a scenario analysis to determine how a reduced level of uncertainty would impact the 10-year break-even rate of inflation.\n\nActively Managed Portfolio\nSpencer is evaluating the Neptune Fund, which is long-only and actively managed. The Fund's holdings comprise stocks and bonds and it uses a separate benchmark for these two asset classes. Spencer measures the value added by the Neptune Fund over the past year. The 1-year rates of return for each asset class as well as their allocations at the beginning of the year, are presented in Exhibit 1.",
+  {"t": 0},
+  "Spencer proposes a new portfolio which combines the Neptune Fund with a new benchmark to achieve the optimal amount of active risk assuming no constraints. She estimates the Neptune Fund information ratio to be 0.25. Her forecasts of excess returns (expected returns minus the risk-free rate) and risk for the benchmark and the Neptune Fund are presented in Exhibit 2.",
+  {"t": 1},
+  "Upon further examination, Spencer discovers that due to the size of some positions taken by the Neptune Fund manager, the new portfolio offering would violate Hutch's position limit policy for individual securities held in client portfolios. Using the fundamental law of active management, she correctly concludes that if Hutch's limit policy were applied to the Neptune Fund, its information ratio would be lower."
+];
+MOCK6_S2[6].parts = [
+  "Fiona Wai is an analyst at a private equity fund. Wai is analyzing two publicly traded companies in the music industry, MuzicPlay Ltd. and Legendre Entertainment Co.\n\nMuzicPlay\nMuzicPlay operates in the online music streaming sector. While analyzing the company, Wai refers to a sector report. The report projects that MuzicPlay will reach its peak profitability in the next few years. Thereafter, the company's ROE will decline and then remain equal to its cost of equity after 20 years.\n\nWai disagrees with the projection in the report. She expects MuzicPlay's low dividend payout ratio will allow it to invest in growth opportunities and generate returns higher than its cost of equity over the long term. In order to calculate the intrinsic value of MuzicPlay's stock using a multistage residual income model, Wai uses MuzicPlay's information and her own estimates shown in Exhibit 1.",
+  {"t": 0},
+  "Legendre\nLegendre's current dividend per share is $1.50. A broker estimates Legendre's required rate of return to be 6.5% and sets a target price for Legendre's stock at $100.00. Wai calculates the implied dividend growth rate using the broker's estimate and the Gordon growth model.\n\nWai generates her own long-term estimates for Legendre. She also calculates Legendre\u2019s sustainable growth rate using her estimates in Exhibit 2 and a DuPont analysis.",
+  {"t": 1}
+];
+MOCK6_S2[7].parts = [
+  "Martha Kaushal is analyzing the dividend and ESG policies of Metavar, a large, mature company that sells consumer durables.\n\nMetavar's current dividend policy represents a gradual adjustment to a target dividend payout ratio. Kaushal collects information about Metavar in Exhibit 1 to estimate the dividend per share for the current year.",
+  {"t": 0},
+  "Kaushal next evaluates the sustainability of Metavar's dividend policy by reviewing each of the following ratios that cover a range of five years:\n\u2022 Ratio 1: FCFE coverage ratio of 0.9 to 1.0x;\n\u2022 Ratio 2: Dividend coverage of 2.0 to 2.5x; and\n\u2022 Ratio 3: Leverage ratio of 1.4 to 1.5 times that of Metavar's industry peers.\n\nKaushal then calculates the total effective tax rate on pretax income distributed as dividends to individual investors. Metavar is in a jurisdiction with a double taxation system, in which the corporate tax rate on pretax income is 30% and the personal tax rate on dividends is 25%.\n\nFinally, Kaushal evaluates Metavar's ESG policies. In particular, she considers the strength of the company's corporate governance compared to two of its competitors and compiles the information in Exhibit 2.",
+  {"t": 1}
+];
+MOCK6_S2[8].parts = [
+  "Giuseppe Mortale is a financial analyst at an investment fund. Mortale is analyzing the credit risk of publicly traded corporate and securitized debt. The current annual one-year and two-year zero-coupon default-free rates are 3.0% and 3.2%, respectively. Mortale first looks at Bond 1, a 4.5% annual coupon bond with one year to maturity and trading at par. It has just paid its annual coupon. Mortale estimates a probability of survival for the bond of 97.8%. In case of default, Mortale expects a recovery rate of 40% of the exposure.\n\nBond 2 has three years to maturity and a modified duration of 2.6. The bond is rated BBB. Mortale expects the bond to be downgraded to a BB rating in one year, so he prepares the partial transition matrix in Exhibit 1.",
+  {"t": 0},
+  "Mortale next decides to build a reduced-form credit risk model to predict the credit rating change of Bond 2.\n\nBond 3 was issued by a high-yield issuer that was recently acquired through a leveraged buyout. The credit term structure of Bond 3's issuer is downward sloping. Mortale considers the market expectations implied by such a term structure."
+];
+MOCK6_S2[9].parts = [
+  "Marcus Lagrange is a fixed-income portfolio manager in South Africa. He is reviewing several current and potential derivative positions. All currency amounts are in South African rand (ZAR) and all calculations use an actual/365-day count convention. Lagrange evaluates a 6-month futures contract on a government bond that pays a 5% fixed annual coupon and trades at par. The current annual risk-free rate is 5% and the bond will pay a coupon three months prior to expiry of the futures contract. Lagrange considers the bond's carry benefits and costs in the context of the carry arbitrage model.\n\nThree months ago, Lagrange purchased a corporate bond forward contract with six months to expiry at a price of 118 (percentage of par). The current forward price is 123, the annualized 3-month (91 day) discount rate is 4.62%, and the 6-month (183 day) discount rate is 4.87%. He determines the current value of the position.\n\nLagrange wants to buy a European interest rate call option that, if exercised, will fix the interest rate he receives for six months starting three months from now. He decides to value this interest rate option using the Black model and determines the appropriate underlying rate to value the option.\n\nLagrange holds a fixed-rate bond and is considering using an interest rate swap to hedge the cash flows. He uses the present value factors in Exhibit 1 to price a 4-year interest rate swap with annual resets.",
+  {"t": 0}
+];
+MOCK6_S2[10].parts = [
+  "Pamela McKay is an equity analyst examining the consolidated financial statements ending 31 December for two competitors, Bluesky and Greensea. Both companies report in EUR in accordance with IFRS.\n\nFinancial statement disclosures reveal that Bluesky imports a substantial amount of raw materials under 30-day credit terms and denominated in the exporter's currency. Bluesky does not hedge these transactions. These imports are from a country whose currency steadily depreciated against the EUR during the year.\n\nAt the beginning of the period McKay is examining, Bluesky and Greensea each established small, wholly-owned subsidiaries in the US. Neither parent company has any other foreign subsidiaries. In McKay's review of each company's consolidated financial statements and related disclosures, she makes an observation: the two parent companies use different translation methods for their respective US subsidiaries. Bluesky uses the current rate method and Greensea uses the temporal method. McKay notes that the USD appreciated steadily relative to the EUR during the year.\n\nBoth the management of Bluesky and the management of Greensea disclose that their respective US subsidiaries were profitable. McKay notes, however, that the consolidated financial statements for Greensea show a translation loss. She considers what these facts reveal about the financial statements of the two parent companies and the US subsidiaries."
+];
+
 const MOCK7_S1 = [
   {
     title: "Leo Goat \u2013 Real Estate: REITs, REOCs, NAV & AFFO",
@@ -3897,10 +4049,48 @@ let ordMode = 'seq';
 // ══════════════════════════════════════════════
 // SCREEN
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// AFFICHAGE MODE EXAMEN (largeur vignette, police, plein écran)
+// ══════════════════════════════════════════════
+const VIEW_KEY='cfaQuizView';
+const VIG_WIDTHS=[1,1.3,1.7,2.2,3];
+let viewPrefs={fs:14,wi:2,full:true};
+try{Object.assign(viewPrefs,JSON.parse(localStorage.getItem(VIEW_KEY)||'{}'));}catch(e){}
+function saveViewPrefs(){try{localStorage.setItem(VIEW_KEY,JSON.stringify(viewPrefs));}catch(e){}}
+function applyViewPrefs(){
+  viewPrefs.fs=Math.min(22,Math.max(10,viewPrefs.fs));
+  viewPrefs.wi=Math.min(VIG_WIDTHS.length-1,Math.max(0,viewPrefs.wi));
+  const r=document.documentElement.style;
+  r.setProperty('--vigfs',viewPrefs.fs+'px');
+  r.setProperty('--vigw',VIG_WIDTHS[viewPrefs.wi]+'fr');
+  const l=document.getElementById('vigFsLabel'); if(l) l.textContent=viewPrefs.fs+'px';
+  const cb=document.getElementById('optFullscreen'); if(cb) cb.checked=!!viewPrefs.full;
+}
+function vigFont(d){viewPrefs.fs+=d;applyViewPrefs();saveViewPrefs();}
+function vigWidth(d){viewPrefs.wi+=d;applyViewPrefs();saveViewPrefs();}
+function setFullPref(v){viewPrefs.full=!!v;saveViewPrefs();}
+function toggleFullscreen(){
+  const el=document.documentElement;
+  if(!document.fullscreenElement){ if(el.requestFullscreen) el.requestFullscreen().catch(()=>{}); }
+  else if(document.exitFullscreen){ document.exitFullscreen().catch(()=>{}); }
+}
+document.addEventListener('fullscreenchange',()=>{
+  const b=document.getElementById('fsBtn'); if(b) b.textContent=document.fullscreenElement?'⛶ Quitter':'⛶ Plein écran';
+});
+applyViewPrefs();
+
 function setScreen(id){
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.getElementById('scr-'+id).classList.add('on');
   if(id==='library'){renderLibrary();renderResumeBanner();}
+  document.body.classList.toggle('in-quiz',id==='quiz');
+  if(id==='quiz'){
+    if(viewPrefs.full && !document.fullscreenElement && document.documentElement.requestFullscreen){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }
+  } else if(document.fullscreenElement && document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
 }
 
 // ══════════════════════════════════════════════
