@@ -500,6 +500,21 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 .vig-tbl td,.vig-tbl th,.qtbl td,.qtbl th{white-space:normal;overflow-wrap:break-word}
 /* ligne de titre (une seule cellule sur toute la largeur) : elle ne doit pas élargir le tableau, elle se replie sur sa largeur */
 .vig-tbl th[colspan]:only-child,.qtbl th[colspan]:only-child{max-width:0;width:100%;overflow-wrap:anywhere}
+
+/* ── Statistiques par sujet, marquées dans les résultats ── */
+.rstats{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.rs .rn.o{color:var(--orange)}
+.hist-btn.tsbtn{right:140px}
+.tsrow{display:grid;grid-template-columns:minmax(160px,1.1fr) 2.4fr auto;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.tsname{font-weight:600}
+.tsname small{display:block;font-weight:400;color:var(--dim);font-size:11px;margin-top:2px}
+.tsbarw{position:relative;height:12px;border-radius:6px;background:rgba(52,82,67,.12)}
+.tsbar{height:100%;border-radius:6px;min-width:3px}
+.tsmark{position:absolute;left:70%;top:-4px;bottom:-4px;width:2px;background:var(--text);opacity:.5}
+.tsbadge{font-size:11px;padding:2px 9px;border:1px solid;border-radius:12px;white-space:nowrap}
+.tsalert{margin:12px 0;padding:10px 14px;border:1px solid rgba(185,56,56,.4);border-radius:8px;background:rgba(185,56,56,.07);font-size:13px;color:var(--red)}
+.tsalert.ok{border-color:rgba(35,132,67,.4);background:rgba(35,132,67,.07);color:var(--green)}
+@media(max-width:700px){.tsrow{grid-template-columns:1fr}.hist-btn.tsbtn{right:auto;left:14px}}
 </style>
 </head>
 <body>
@@ -536,6 +551,7 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
     <h2>Bibliothèque de Mocks</h2>
     <p class="sub">Sélectionnez un mock pour démarrer · CFA Level II — 22 vignettes · 88 questions par session complète</p>
     <div class="mock-grid" id="mockGrid"></div>
+    <button class="hist-btn tsbtn" onclick="openTopicStats()">📚 Stats par sujet</button>
     <button class="hist-btn" onclick="openHistory(null)">📊 Historique</button>
   </div>
 </div>
@@ -676,11 +692,14 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
       <div class="rs"><div class="rn g" id="rca">0</div><div class="rl">Correctes</div></div>
       <div class="rs"><div class="rn r" id="rwa">0</div><div class="rl">Incorrectes</div></div>
       <div class="rs"><div class="rn b" id="rta">0min</div><div class="rl">Temps utilisé</div></div>
+      <div class="rs"><div class="rn o" id="rmk">0</div><div class="rl">🔖 Marquées</div></div>
     </div>
+    <div id="resTopics" style="margin-bottom:22px"></div>
     <div class="tabs">
       <button class="tab on" onclick="switchTab('all',this)">Toutes</button>
       <button class="tab" onclick="switchTab('wr',this)">Ratées</button>
       <button class="tab" onclick="switchTab('rt',this)">Correctes</button>
+      <button class="tab" id="tabMk" onclick="switchTab('mk',this)">🔖 Marquées</button>
     </div>
     <div id="revList"></div>
     <div class="ractn">
@@ -695,6 +714,7 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
   <div class="card">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
       <h2 id="histTitle" style="flex:1">📊 Historique</h2>
+      <button class="btn btn-o" style="padding:7px 12px;font-size:12px" onclick="openTopicStats()">📚 Stats par sujet</button>
       <button class="del-all-btn" id="delAllBtn" onclick="deleteAllHistory()">🗑 Tout effacer</button>
     </div>
     <p class="sub" id="histSub"></p>
@@ -726,6 +746,20 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
   </div>
 </div>
 
+<!-- TOPIC STATS -->
+<div id="scr-topics" class="scr">
+  <div class="card">
+    <h2 style="margin-bottom:4px">📚 Statistiques par sujet</h2>
+    <p class="sub" id="tsSub"></p>
+    <div class="hfilter" id="tsMockFilter"></div>
+    <div class="hfilter" id="tsModeFilter"></div>
+    <div id="tsAlert"></div>
+    <div id="tsRows"></div>
+    <p class="sub" id="tsNote" style="font-size:11px;margin-top:14px"></p>
+    <button class="btn btn-o" onclick="setScreen('library')" style="margin-top:8px">← Retour</button>
+  </div>
+</div>
+
 <!-- HISTORY REVIEW -->
 <div id="scr-hreview" class="scr">
   <div class="card">
@@ -739,6 +773,7 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
       <button class="tab on" onclick="switchHrevTab('all',this)">Toutes</button>
       <button class="tab" onclick="switchHrevTab('wr',this)">Ratées</button>
       <button class="tab" onclick="switchHrevTab('ok',this)">Correctes</button>
+      <button class="tab" onclick="switchHrevTab('mk',this)">🔖 Marquées</button>
     </div>
     <div id="hrevList"></div>
     <div class="ractn">
@@ -4332,6 +4367,100 @@ document.addEventListener('fullscreenchange',()=>{
 });
 applyViewPrefs();
 
+// ══════════════════════════════════════════════
+// SUJETS PAR VIGNETTE + STATISTIQUES PAR SUJET
+// Mocks 1 à 5 : sujet indiqué dans les PDF (3 vignettes sans libellé classées d'après le contenu).
+// Mocks 6 à 8 : sujet non indiqué dans les PDF, classement d'après le contenu (validé par l'utilisateur).
+// Table séparée des mocks : elle ne modifie ni questions, ni réponses, ni énoncés.
+// ══════════════════════════════════════════════
+const VIG_TOPICS={"mock1": {"s1": ["Quantitative Methods", "Economics", "Economics", "Financial Reporting", "Equity Valuation", "Equity Valuation", "Fixed Income", "Derivatives", "Alternative Investments", "Portfolio Management", "Ethics & Standards"], "s2": ["Quantitative Methods", "Financial Reporting", "Corporate Finance", "Alternative Investments", "Equity Valuation", "Fixed Income", "Fixed Income", "Derivatives", "Portfolio Management", "Ethics & Standards", "Ethics & Standards"]}, "mock2": {"s1": ["Quantitative Methods", "Economics", "Financial Reporting", "Equity Valuation", "Equity Valuation", "Fixed Income", "Derivatives", "Alternative Investments", "Portfolio Management", "Portfolio Management", "Ethics & Standards"], "s2": ["Quantitative Methods", "Economics", "Financial Reporting", "Financial Reporting", "Equity Valuation", "Corporate Finance", "Fixed Income", "Fixed Income", "Derivatives", "Alternative Investments", "Ethics & Standards"]}, "mock3": {"s1": ["Economics", "Economics", "Financial Reporting", "Financial Reporting", "Corporate Finance", "Equity Valuation", "Equity Valuation", "Equity Valuation", "Derivatives", "Alternative Investments", "Ethics & Standards"], "s2": ["Corporate Finance", "Quantitative Methods", "Financial Reporting", "Fixed Income", "Fixed Income", "Derivatives", "Portfolio Management", "Portfolio Management", "Portfolio Management", "Ethics & Standards", "Ethics & Standards"]}, "mock4": {"s1": ["Quantitative Methods", "Economics", "Financial Reporting", "Financial Reporting", "Corporate Finance", "Equity Valuation", "Fixed Income", "Derivatives", "Alternative Investments", "Ethics & Standards", "Ethics & Standards"], "s2": ["Financial Reporting", "Quantitative Methods", "Equity Valuation", "Equity Valuation", "Fixed Income", "Fixed Income", "Derivatives", "Alternative Investments", "Portfolio Management", "Portfolio Management", "Ethics & Standards"]}, "mock5": {"s1": ["Quantitative Methods", "Quantitative Methods", "Economics", "Economics", "Financial Reporting", "Alternative Investments", "Fixed Income", "Derivatives", "Portfolio Management", "Portfolio Management", "Ethics & Standards"], "s2": ["Financial Reporting", "Financial Reporting", "Corporate Finance", "Equity Valuation", "Equity Valuation", "Equity Valuation", "Fixed Income", "Fixed Income", "Derivatives", "Alternative Investments", "Ethics & Standards"]}, "mock6": {"s1": ["Equity Valuation", "Fixed Income", "Quantitative Methods", "Fixed Income", "Financial Reporting", "Portfolio Management", "Financial Reporting", "Ethics & Standards", "Corporate Finance", "Alternative Investments", "Economics"], "s2": ["Ethics & Standards", "Ethics & Standards", "Economics", "Portfolio Management", "Equity Valuation", "Portfolio Management", "Equity Valuation", "Corporate Finance", "Fixed Income", "Derivatives", "Financial Reporting"]}, "mock7": {"s1": ["Alternative Investments", "Quantitative Methods", "Ethics & Standards", "Financial Reporting", "Derivatives", "Alternative Investments", "Equity Valuation", "Fixed Income", "Portfolio Management", "Ethics & Standards", "Financial Reporting"], "s2": ["Derivatives", "Corporate Finance", "Ethics & Standards", "Portfolio Management", "Equity Valuation", "Fixed Income", "Financial Reporting", "Economics", "Quantitative Methods", "Fixed Income", "Equity Valuation"]}, "mock8": {"s1": ["Fixed Income", "Quantitative Methods", "Portfolio Management", "Alternative Investments", "Ethics & Standards", "Portfolio Management", "Financial Reporting", "Financial Reporting", "Equity Valuation", "Corporate Finance", "Fixed Income"], "s2": ["Ethics & Standards", "Economics", "Corporate Finance", "Alternative Investments", "Financial Reporting", "Ethics & Standards", "Equity Valuation", "Derivatives", "Equity Valuation", "Portfolio Management", "Fixed Income"]}};
+const TOPIC_ORDER=['Ethics & Standards','Quantitative Methods','Economics','Financial Reporting','Corporate Finance','Equity Valuation','Fixed Income','Derivatives','Alternative Investments','Portfolio Management'];
+const TOPIC_TARGET=70;
+function applyVigTopics(){
+  Object.keys(VIG_TOPICS).forEach(k=>{
+    const m=mocks[k]; if(!m) return;
+    ['s1','s2'].forEach(sk=>{ (m[sk]||[]).forEach((vig,i)=>{ const t=(VIG_TOPICS[k][sk]||[])[i]; if(t) vig.topic=t; }); });
+  });
+}
+let _titleTopic=null;
+function titleTopicMap(){
+  if(_titleTopic) return _titleTopic;
+  _titleTopic={};
+  Object.keys(mocks).forEach(k=>{ _titleTopic[k]={}; ['s1','s2'].forEach(sk=>(mocks[k][sk]||[]).forEach(v=>{ if(v.title&&v.topic) _titleTopic[k][v.title]=v.topic; })); });
+  return _titleTopic;
+}
+function topicOfItem(item){ return item.topic||inferTopicL2(item.q||''); }
+function topicOfDetail(entry,item,meta){
+  const t=item.t||(titleTopicMap()[entry.mockId]||{})[item.vigTitle];
+  if(t) return t;
+  if(meta) meta.est=(meta.est||0)+1;
+  return inferTopicL2(item.q||'');
+}
+function topicLabel(t){ return t==='Other'?'Autre (non classé)':t; }
+function topicRowsHTML(stats,withEmpty){
+  const rows=Object.entries(stats).filter(([t,x])=>x.n>0).map(([t,x])=>({t,n:x.n,c:x.c,p:Math.round(x.c/x.n*100)})).sort((a,b)=>a.p-b.p||b.n-a.n);
+  let html=rows.map(r=>{
+    const low=r.p<TOPIC_TARGET, mid=!low&&r.p<80;
+    const col=low?'var(--red)':mid?'var(--orange)':'var(--green)';
+    const badge=low?'⚠ Sous '+TOPIC_TARGET+'%':mid?'Limite':'OK';
+    const few=r.n<8?' · peu de données':'';
+    return '<div class="tsrow"><div class="tsname">'+topicLabel(r.t)+'<small>'+r.c+' / '+r.n+' correctes'+few+'</small></div>'
+      +'<div class="tsbarw"><div class="tsbar" style="width:'+r.p+'%;background:'+col+'"></div><div class="tsmark" title="Objectif '+TOPIC_TARGET+'%"></div></div>'
+      +'<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><strong style="color:'+col+';min-width:42px;text-align:right">'+r.p+'%</strong><span class="tsbadge" style="color:'+col+';border-color:'+col+'">'+badge+'</span></div></div>';
+  }).join('');
+  if(withEmpty){
+    const empty=TOPIC_ORDER.filter(t=>!(stats[t]&&stats[t].n>0));
+    html+=empty.map(t=>'<div class="tsrow" style="opacity:.55"><div class="tsname">'+t+'<small>aucune donnée</small></div><div class="tsbarw"><div class="tsmark"></div></div><div style="text-align:right;color:var(--dim)">—</div></div>').join('');
+  }
+  return {html,rows};
+}
+function sessionTopicStats(list,answerOf){
+  const st={};
+  list.forEach((it,i)=>{ const t=topicOfItem(it); (st[t]=st[t]||{n:0,c:0}).n++; if(answerOf(i)===it.a) st[t].c++; });
+  return st;
+}
+function renderResTopics(){
+  const box=document.getElementById('resTopics'); if(!box) return;
+  const st=sessionTopicStats(session,i=>answers[i]);
+  const r=topicRowsHTML(st,false);
+  box.innerHTML=r.rows.length?'<div class="hchart-title" style="margin:6px 0 4px">RÉSULTAT PAR SUJET (cette session)</div>'+r.html:'';
+}
+let tsMock=null, tsMode='all';
+function openTopicStats(){ setScreen('topics'); renderTopicStats(); }
+function computeTopicStats(entries,mode,meta){
+  const stats={}, last={};
+  [...entries].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>{
+    (e.detail||[]).forEach(it=>{
+      const t=topicOfDetail(e,it,meta), ok=it.u===it.a;
+      if(mode==='last'){ last[(e.mockId||'')+'|'+it.q]={t,ok}; }
+      else{ (stats[t]=stats[t]||{n:0,c:0}).n++; if(ok) stats[t].c++; }
+    });
+  });
+  if(mode==='last') Object.values(last).forEach(x=>{ (stats[x.t]=stats[x.t]||{n:0,c:0}).n++; if(x.ok) stats[x.t].c++; });
+  return stats;
+}
+function renderTopicStats(){
+  const all=getHistory().filter(e=>e.detail&&e.detail.length);
+  const entries=tsMock?all.filter(e=>e.mockId===tsMock):all;
+  const chip=(label,sel,fn)=>{ const b=document.createElement('button'); b.className='opt'+(sel?' sel':''); b.textContent=label; b.onclick=fn; return b; };
+  const mf=document.getElementById('tsMockFilter'); mf.innerHTML='';
+  mf.appendChild(chip('Tous les mocks',!tsMock,()=>{tsMock=null;renderTopicStats();}));
+  Object.keys(mocks).forEach(k=>{ if(all.some(e=>e.mockId===k)) mf.appendChild(chip(mocks[k].name||k,tsMock===k,()=>{tsMock=k;renderTopicStats();})); });
+  const mo=document.getElementById('tsModeFilter'); mo.innerHTML='';
+  mo.appendChild(chip('Toutes les tentatives',tsMode==='all',()=>{tsMode='all';renderTopicStats();}));
+  mo.appendChild(chip('Dernière tentative de chaque question',tsMode==='last',()=>{tsMode='last';renderTopicStats();}));
+  const meta={est:0};
+  const stats=computeTopicStats(entries,tsMode,meta);
+  const r=topicRowsHTML(stats,true);
+  const noDetail=getHistory().filter(e=>!(e.detail&&e.detail.length)&&(!tsMock||e.mockId===tsMock)).length;
+  const tot=r.rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
+  document.getElementById('tsSub').textContent=entries.length?(entries.length+' session(s) · '+tot.n+' réponses · réussite globale '+(tot.n?Math.round(tot.c/tot.n*100):0)+'%'):'Aucune session enregistrée pour le moment.';
+  const low=r.rows.filter(x=>x.p<TOPIC_TARGET);
+  document.getElementById('tsAlert').innerHTML=low.length?'<div class="tsalert">⚠ '+low.length+' sujet(s) sous '+TOPIC_TARGET+'% : <strong>'+low.map(x=>topicLabel(x.t)+' ('+x.p+'%)').join(', ')+'</strong></div>':(r.rows.length?'<div class="tsalert ok">✅ Tous les sujets travaillés sont à '+TOPIC_TARGET+'% ou plus.</div>':'');
+  document.getElementById('tsRows').innerHTML=r.html;
+  document.getElementById('tsNote').textContent="Sujets : indiqués dans les PDF pour les Mocks 1 à 5 ; classés d'après le contenu pour les Mocks 6 à 8 et 3 vignettes sans libellé (classement validé). Les anciennes sessions sont rattachées par le titre de la vignette. « Peu de données » = moins de 8 réponses."+(noDetail?' · '+noDetail+' ancienne(s) session(s) enregistrée(s) sans détail par question ne peuvent pas être comptées.':'')+(meta.est?' · '+meta.est+' réponse(s) rattachée(s) par mots-clés (estimation).':'');
+}
+
 function setScreen(id){
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.getElementById('scr-'+id).classList.add('on');
@@ -4490,6 +4619,7 @@ function buildSession(vignettes){
         vigText: vig.vignette || vig.text || '',
         vigTableHtml: vig.tableHtml || null,
         vigParts: vig.parts || null,
+        topic: vig.topic || null,
         q: q.text || q.q || '',
         tableHtml: q.tableHtml || null,
         c: q.choices ? q.choices.map(ch=>typeof ch==='object'?ch.text:ch) : (q.c||[]),
@@ -4830,6 +4960,10 @@ function showResults(){
   document.getElementById('rtitle').textContent=title;
   document.getElementById('rsub').textContent=sub;
   saveToHistory(selMockId, selSession, session, answers, correct, tot, elapsedSec);
+  const nMk=marked.filter(Boolean).length;
+  document.getElementById('rmk').textContent=nMk;
+  document.getElementById('tabMk').textContent='🔖 Marquées ('+nMk+')';
+  renderResTopics();
   renderReview('all');
 }
 
@@ -4838,7 +4972,7 @@ function renderReview(tab){
   list.innerHTML='';
   session.forEach((item,i)=>{
     const ok=answers[i]===item.a;
-    if(tab==='wr'&&ok||tab==='rt'&&!ok)return;
+    if(tab==='wr'&&ok||tab==='rt'&&!ok||tab==='mk'&&!marked[i])return;
     const cIdx=L.indexOf(item.a),userIdx=answers[i]?L.indexOf(answers[i]):-1;
     const div=document.createElement('div');
     div.className='ri '+(ok?'rt':'wr');
@@ -4851,8 +4985,8 @@ function renderReview(tab){
     const noAnsLine=!answers[i]?'<div class="bad">⚪ Sans réponse</div>':'';
     const okLine='<div class="ok" id="okLine_'+i+'">✓ Bonne réponse : '+item.a+'. '+(cIdx>=0?item.c[cIdx]:'')+'</div>';
     const explLine=item.e?'<div style="font-size:11px;color:var(--dim);margin-top:6px;line-height:1.55;white-space:pre-wrap">📖 '+item.e+'</div>':'';
-    div.innerHTML='<div class="vig-badge">'+item.vigTitle+'</div>'
-      +'<div class="rinum">Q'+String(i+1).padStart(2,'0')+' '+(ok?'✓':'✗')+'</div>'
+    div.innerHTML='<div class="vig-badge">'+item.vigTitle+(item.topic?' · '+item.topic:'')+'</div>'
+      +'<div class="rinum">Q'+String(i+1).padStart(2,'0')+' '+(ok?'✓':'✗')+(marked[i]?' <span style="color:var(--orange)">🔖 Marquée</span>':'')+'</div>'
       +'<div class="riq">'+item.q+'</div>'
       +'<div class="rian">'+wrongLine+noAnsLine+okLine+explLine+'</div>'
       +'<button class="corr-btn" onclick="toggleCorrPanel('+i+')">✏️ Corriger</button>'
@@ -4986,13 +5120,14 @@ function saveToHistory(mockId, sess, sessionQ, ans, correct, tot, elapsed){
     const wrongTopics={};
     sessionQ.forEach((item,i)=>{
       if(ans[i]!==item.a){
-        const topic=inferTopicL2(item.q);
+        const topic=topicOfItem(item);
         wrongTopics[topic]=(wrongTopics[topic]||0)+1;
       }
     });
     const detail=sessionQ.map((item,i)=>({
       q:item.q, c:item.c, a:item.a, u:ans[i]||null,
-      vigTitle:item.vigTitle, e:item.e||null
+      vigTitle:item.vigTitle, e:item.e||null,
+      t:topicOfItem(item), m:!!marked[i]
     }));
     const entry={
       id:Date.now(), mockId,
@@ -5077,6 +5212,7 @@ function renderHistList(entries){
     const timeStr=min+'min'+String(sec).padStart(2,'0')+'s';
     const pass=e.pct>=70;
     const hasDetail=e.detail&&e.detail.length>0;
+    const mkN=(e.detail||[]).filter(d=>d.m).length;
     const topWrong=Object.entries(e.wrongTopics||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const tagsHTML=topWrong.length?'<div class="htopics">'+topWrong.map(([t,n])=>`<span class="htag">⚠ ${t} (${n})</span>`).join('')+'</div>':'';
     const div=document.createElement('div');
@@ -5085,7 +5221,7 @@ function renderHistList(entries){
       <div class="hentry-hdr">
         <div>
           <div class="hentry-title">${e.mockName} · ${e.sessLabel} · ${e.questions} Q</div>
-          <div class="hentry-meta">${dateStr} · ⏱ ${timeStr}${hasDetail?' · <span style="color:var(--gold);font-size:10px">🔍 Cliquer pour revoir</span>':''}</div>
+          <div class="hentry-meta">${dateStr} · ⏱ ${timeStr}${mkN?` · <span style="color:var(--orange)">🔖 ${mkN} marquée(s)</span>`:''}${hasDetail?' · <span style="color:var(--gold);font-size:10px">🔍 Cliquer pour revoir</span>':''}</div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <div>
@@ -5123,7 +5259,7 @@ function renderHrevList(tab){
   let shown=0;
   (hrevEntry.detail||[]).forEach((item,i)=>{
     const ok=item.u===item.a;
-    if(tab==='wr'&&ok||tab==='ok'&&!ok)return;
+    if(tab==='wr'&&ok||tab==='ok'&&!ok||tab==='mk'&&!item.m)return;
     shown++;
     const cIdx=L.indexOf(item.a),uIdx=item.u?L.indexOf(item.u):-1;
     const numChoices=item.c.length;
@@ -5138,8 +5274,9 @@ function renderHrevList(tab){
     const noAnsLine=!item.u?'<div class="bad">⚪ Sans réponse</div>':'';
     const okLine=`<div class="ok" id="hrokLine_${i}">✓ Bonne réponse : ${item.a}. ${cIdx>=0?item.c[cIdx]:''}</div>`;
     const explLine=item.e?`<div style="font-size:11px;color:var(--dim);margin-top:6px;line-height:1.55">📖 ${item.e}</div>`:'';
-    div.innerHTML=`<div class="vig-badge">${item.vigTitle||''}</div>`
-      +`<div class="hrev-num">Q${String(i+1).padStart(2,'0')} ${ok?'✓':'✗'}</div>`
+    const _tp=topicOfDetail(hrevEntry,item);
+    div.innerHTML=`<div class="vig-badge">${item.vigTitle||''}${_tp&&_tp!=='Other'?' · '+_tp:''}</div>`
+      +`<div class="hrev-num">Q${String(i+1).padStart(2,'0')} ${ok?'✓':'✗'}${item.m?' <span style="color:var(--orange)">🔖 Marquée</span>':''}</div>`
       +`<div class="hrev-q">${item.q}</div>`
       +`<div class="hrev-ans">${wrongLine}${noAnsLine}${okLine}${explLine}</div>`
       +`<button class="corr-btn" onclick="toggleHrevCorrPanel(${i})">✏️ Corriger</button>`
@@ -5168,7 +5305,7 @@ function retryWrongFromEntry(entryId){
 function _launchRetryFromDetail(detail,mockId,sess){
   const wrong=detail.filter(item=>item.u!==item.a);
   if(!wrong.length){alert('Félicitations, tout était correct !');return;}
-  session=wrong.map(item=>({vigIdx:0,qIdx:0,vigTitle:item.vigTitle||'',vigText:'',vigTableHtml:null,q:item.q,c:item.c,a:item.a,e:item.e||null,tableHtml:null}));
+  session=wrong.map(item=>({vigIdx:0,qIdx:0,vigTitle:item.vigTitle||'',vigText:'',vigTableHtml:null,topic:item.t||null,q:item.q,c:item.c,a:item.a,e:item.e||null,tableHtml:null}));
   answers=new Array(session.length).fill(null);
   skipped=new Array(session.length).fill(false);
   marked=new Array(session.length).fill(false);
@@ -5681,6 +5818,7 @@ function renderGChronoHistory() {
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
+applyVigTopics();
 loadCorrectionsFromStorage();
 renderLibrary();
 renderResumeBanner();
