@@ -521,6 +521,40 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 .pstbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
 .pstbl td.pn{font-weight:600;white-space:nowrap}
 .pstbl small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
+
+/* ── Tableau de bord des statistiques : profondeur, animations, interactions ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0 8px}
+.kpi{background:linear-gradient(145deg,#ffffff,var(--navy3));border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:0 8px 20px rgba(36,91,67,.10),0 1px 0 rgba(255,255,255,.95) inset;transition:transform .18s ease,box-shadow .25s ease;will-change:transform;transform-style:preserve-3d}
+.kpi:hover{box-shadow:0 18px 32px rgba(36,91,67,.20)}
+.kpi-l{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim)}
+.kpi-v{font-size:32px;font-weight:700;margin:4px 0 2px;letter-spacing:-.5px}
+.kpi-s{font-size:11px;color:var(--dim)}
+.tsgrid{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;margin:10px 0}
+@media(max-width:900px){.tsgrid{grid-template-columns:1fr}}
+.tscard{background:linear-gradient(160deg,#ffffff,var(--navy3));border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 10px 24px rgba(36,91,67,.10);min-width:0}
+.hmtbl{border-collapse:separate;border-spacing:3px;font-size:12px;width:100%}
+.hmtbl th{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);font-weight:600;padding:2px 4px;text-align:center}
+.hmt{font-weight:600;font-size:12px;padding:0 8px 0 0;white-space:nowrap;cursor:pointer;color:var(--text)}
+.hmt:hover,.hmt.sel{color:var(--gold);text-decoration:underline}
+.hmc{text-align:center;color:#fff;font-weight:700;border-radius:6px;padding:7px 0;min-width:34px;cursor:pointer;text-shadow:0 1px 1px rgba(0,0,0,.25);box-shadow:0 2px 4px rgba(0,0,0,.12);transition:transform .12s ease,box-shadow .12s ease}
+.hmc:hover{transform:translateY(-2px) scale(1.12);box-shadow:0 8px 14px rgba(0,0,0,.22);position:relative;z-index:2}
+.hmc.e{background:rgba(52,82,67,.07);color:var(--dim);box-shadow:none;cursor:default;font-weight:400}
+.hmc.e:hover{transform:none;box-shadow:none}
+.hmleg{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);margin-top:8px}
+.hmleg i{display:block;width:110px;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(0,58%,46%),hsl(60,58%,46%),hsl(120,58%,46%))}
+#tsTip{position:fixed;display:none;z-index:9999;background:#263a35;color:#fff;padding:7px 11px;border-radius:8px;font-size:12px;line-height:1.45;box-shadow:0 8px 22px rgba(0,0,0,.28);pointer-events:none;max-width:260px}
+#tsTip em{opacity:.75;font-size:11px}
+.tsbar{transition:width .8s cubic-bezier(.2,.8,.2,1);background-image:linear-gradient(180deg,rgba(255,255,255,.38),rgba(0,0,0,.10));box-shadow:0 2px 5px rgba(0,0,0,.18)}
+.tsrow.clk{cursor:pointer;border-radius:8px;transition:background .15s,transform .15s}
+.tsrow.clk:hover{background:var(--golddim);transform:translateX(3px)}
+.tsrow.sel{background:var(--golddim);box-shadow:inset 3px 0 0 var(--gold)}
+.tsdrill{margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(160deg,#fff,var(--navy3));box-shadow:0 10px 24px rgba(36,91,67,.10)}
+.drq{padding:10px 12px;margin:8px 0;border:1px solid var(--border);border-left:3px solid var(--red);border-radius:8px;background:#fff}
+.drm{font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:4px}
+.drt{font-size:13px;line-height:1.5}
+.dra{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12px}
+.dra .bad{color:var(--red)}.dra .good{color:var(--green)}
+@media (prefers-reduced-motion:reduce){.kpi,.hmc,.tsbar,.tsrow.clk{transition:none!important}}
 </style>
 </head>
 <body>
@@ -757,6 +791,11 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
   <div class="card">
     <h2 style="margin-bottom:4px">📚 Statistiques par sujet</h2>
     <p class="sub" id="tsSub"></p>
+    <div class="kpis" id="tsKpis"></div>
+    <div class="tsgrid">
+      <div class="tscard"><div class="hchart-title">RADAR PAR SUJET — clic sur un sommet pour le détail</div><div id="tsRadar"></div></div>
+      <div class="tscard"><div class="hchart-title">CARTE DE CHALEUR · SUJET × MOCK (filtres partie / tentatives appliqués)</div><div id="tsHeat"></div></div>
+    </div>
     <div id="tsParts"></div>
     <div class="hchart-title" style="margin:16px 0 6px">PAR SUJET</div>
     <div class="hfilter" id="tsMockFilter"></div>
@@ -764,6 +803,7 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
     <div class="hfilter" id="tsModeFilter"></div>
     <div id="tsAlert"></div>
     <div id="tsRows"></div>
+    <div id="tsDrill"></div>
     <p class="sub" id="tsNote" style="font-size:11px;margin-top:14px"></p>
     <button class="btn btn-o" onclick="setScreen('library')" style="margin-top:8px">← Retour</button>
   </div>
@@ -4406,15 +4446,15 @@ function topicOfDetail(entry,item,meta){
   return inferTopicL2(item.q||'');
 }
 function topicLabel(t){ return t==='Other'?'Autre (non classé)':t; }
-function topicRowsHTML(stats,withEmpty){
+function topicRowsHTML(stats,withEmpty,clickable){
   const rows=Object.entries(stats).filter(([t,x])=>x.n>0).map(([t,x])=>({t,n:x.n,c:x.c,p:Math.round(x.c/x.n*100)})).sort((a,b)=>a.p-b.p||b.n-a.n);
   let html=rows.map(r=>{
     const low=r.p<TOPIC_TARGET, mid=!low&&r.p<80;
     const col=low?'var(--red)':mid?'var(--orange)':'var(--green)';
     const badge=low?'⚠ Sous '+TOPIC_TARGET+'%':mid?'Limite':'OK';
     const few=r.n<8?' · peu de données':'';
-    return '<div class="tsrow"><div class="tsname">'+topicLabel(r.t)+'<small>'+r.c+' / '+r.n+' correctes'+few+'</small></div>'
-      +'<div class="tsbarw"><div class="tsbar" style="width:'+r.p+'%;background:'+col+'"></div><div class="tsmark" title="Objectif '+TOPIC_TARGET+'%"></div></div>'
+    return '<div class="tsrow'+(clickable?' clk':'')+(clickable&&tsTopic===r.t?' sel':'')+'"'+(clickable?' data-t="'+encodeURIComponent(r.t)+'" title="Clic : voir les questions ratées"':'')+'><div class="tsname">'+topicLabel(r.t)+'<small>'+r.c+' / '+r.n+' correctes'+few+'</small></div>'
+      +'<div class="tsbarw"><div class="tsbar" data-w="'+r.p+'" style="width:0%;background-color:'+col+'"></div><div class="tsmark" title="Objectif '+TOPIC_TARGET+'%"></div></div>'
       +'<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><strong style="color:'+col+';min-width:42px;text-align:right">'+r.p+'%</strong><span class="tsbadge" style="color:'+col+';border-color:'+col+'">'+badge+'</span></div></div>';
   }).join('');
   if(withEmpty){
@@ -4431,8 +4471,9 @@ function sessionTopicStats(list,answerOf){
 function renderResTopics(){
   const box=document.getElementById('resTopics'); if(!box) return;
   const st=sessionTopicStats(session,i=>answers[i]);
-  const r=topicRowsHTML(st,false);
+  const r=topicRowsHTML(st,false,false);
   box.innerHTML=r.rows.length?'<div class="hchart-title" style="margin:6px 0 4px">RÉSULTAT PAR SUJET (cette session)</div>'+r.html:'';
+  animateBars(box);
 }
 
 // ── Statistiques par partie (Partie 1 = Session 1, Partie 2 = Session 2) ──
@@ -4488,6 +4529,143 @@ function renderPartTable(){
   });
   box.innerHTML=h+'</tbody></table></div>';
 }
+
+// ══════════════ Tableau de bord interactif des statistiques ══════════════
+const TOPIC_SHORT={'Ethics & Standards':'Éthique','Quantitative Methods':'Quant','Economics':'Économie','Financial Reporting':'FSA','Corporate Finance':'Corporate','Equity Valuation':'Equity','Fixed Income':'Fixed Income','Derivatives':'Dérivés','Alternative Investments':'Alternatifs','Portfolio Management':'Portefeuille'};
+const C_OK='#238443', C_MID='#b86a18', C_LOW='#b93838', C_GOLD='#245b43', C_LINE='#c5cfca', C_TXT='#263a35', C_DIM='#65746d';
+let tsTopic=null;
+function escH(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function reducedMotion(){ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+function statusColor(p){ return p<TOPIC_TARGET?C_LOW:p<80?C_MID:C_OK; }
+function heatColor(p){ const h=Math.max(0,Math.min(120,(p-40)*2)); return 'hsl('+h+',58%,46%)'; }
+function tipEl(){ let t=document.getElementById('tsTip'); if(!t){ t=document.createElement('div'); t.id='tsTip'; document.body.appendChild(t); } return t; }
+function showTip(html,ev){ const t=tipEl(); t.innerHTML=html; t.style.display='block'; moveTip(ev); }
+function moveTip(ev){ const t=tipEl(); const x=Math.min(ev.clientX+14,window.innerWidth-t.offsetWidth-8), y=Math.min(ev.clientY+14,window.innerHeight-t.offsetHeight-8); t.style.left=Math.max(4,x)+'px'; t.style.top=Math.max(4,y)+'px'; }
+function hideTip(){ const t=document.getElementById('tsTip'); if(t) t.style.display='none'; }
+function animateBars(box){
+  if(!box) return;
+  const bars=box.querySelectorAll('.tsbar[data-w]');
+  const apply=()=>bars.forEach(b=>{ b.style.width=b.dataset.w+'%'; });
+  if(reducedMotion()) apply(); else requestAnimationFrame(()=>requestAnimationFrame(apply));
+}
+function selectTopic(t){ tsTopic=(tsTopic===t)?null:t; renderTopicStats(); const d=document.getElementById('tsDrill'); if(tsTopic&&d&&d.scrollIntoView) d.scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'nearest'}); }
+function countUp(el,to,suffix){
+  if(reducedMotion()||to===0){ el.textContent=to+suffix; return; }
+  const t0=performance.now(), dur=650;
+  (function step(now){ const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3); el.textContent=Math.round(to*e)+suffix; if(k<1) requestAnimationFrame(step); })(t0);
+}
+function renderKpis(stats,rows,entries){
+  const box=document.getElementById('tsKpis'); if(!box) return;
+  if(!rows.length){ box.innerHTML=''; return; }
+  const tot=rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
+  const pct=Math.round(tot.c/tot.n*100);
+  const weakPool=rows.filter(x=>x.n>=4); const weak=(weakPool.length?weakPool:rows).slice().sort((a,b)=>a.p-b.p)[0];
+  const okN=rows.filter(x=>x.p>=TOPIC_TARGET).length;
+  const card=(label,val,suffix,color,sub)=>'<div class="kpi"><div class="kpi-l">'+label+'</div><div class="kpi-v" data-to="'+val+'" data-suf="'+suffix+'" style="color:'+color+'">0'+suffix+'</div><div class="kpi-s">'+sub+'</div></div>';
+  box.innerHTML=card('RÉUSSITE GLOBALE',pct,'%',statusColor(pct),tot.c+' bonnes réponses / '+tot.n)
+    +card('SUJETS ≥ '+TOPIC_TARGET+'%',okN,' / '+rows.length,okN===rows.length?C_OK:C_MID,rows.length-okN?(rows.length-okN)+' à renforcer':'objectif atteint')
+    +'<div class="kpi"><div class="kpi-l">SUJET LE PLUS FAIBLE</div><div class="kpi-v" style="color:'+statusColor(weak.p)+';font-size:22px;line-height:1.25">'+escH(topicLabel(weak.t))+'</div><div class="kpi-s">'+weak.p+'% · '+weak.c+' / '+weak.n+'</div></div>'
+    +card('SESSIONS ANALYSÉES',entries.length,'',C_GOLD,'toutes tentatives confondues');
+  box.querySelectorAll('.kpi-v[data-to]').forEach(el=>countUp(el,+el.dataset.to,el.dataset.suf));
+  if(!reducedMotion()) box.querySelectorAll('.kpi').forEach(k=>{
+    k.addEventListener('mousemove',ev=>{ const r=k.getBoundingClientRect(); const x=(ev.clientX-r.left)/r.width-.5, y=(ev.clientY-r.top)/r.height-.5; k.style.transform='perspective(700px) rotateX('+(-y*9).toFixed(2)+'deg) rotateY('+(x*11).toFixed(2)+'deg) translateZ(6px)'; });
+    k.addEventListener('mouseleave',()=>{ k.style.transform=''; });
+  });
+}
+function renderRadar(stats){
+  const box=document.getElementById('tsRadar'); if(!box) return;
+  const N=TOPIC_ORDER.length, W=520, H=440, cx=W/2, cy=H/2+6, R=148;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  const pt=(i,p)=>[cx+Math.cos(ang(i))*R*p/100, cy+Math.sin(ang(i))*R*p/100];
+  const val=t=>{ const x=stats[t]; return x&&x.n?Math.round(x.c/x.n*100):null; };
+  const ring=r=>TOPIC_ORDER.map((_,i)=>pt(i,r).map(v=>v.toFixed(1)).join(',')).join(' ');
+  let g='<defs><radialGradient id="radG" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#397653" stop-opacity=".12"/><stop offset="1" stop-color="#245b43" stop-opacity=".5"/></radialGradient><filter id="radSh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#245b43" flood-opacity=".35"/></filter></defs>';
+  [25,50,75,100].forEach(r=>{ g+='<polygon points="'+ring(r)+'" fill="'+(r===100?'#f6f8f7':'none')+'" stroke="'+C_LINE+'" stroke-width="1"/>'; });
+  TOPIC_ORDER.forEach((_,i)=>{ const p=pt(i,100); g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0].toFixed(1)+'" y2="'+p[1].toFixed(1)+'" stroke="'+C_LINE+'" stroke-width="1"/>'; });
+  g+='<polygon points="'+ring(TOPIC_TARGET)+'" fill="none" stroke="'+C_MID+'" stroke-width="1.6" stroke-dasharray="5 4"/>';
+  g+='<text x="'+(cx+4)+'" y="'+(cy-R*TOPIC_TARGET/100-4)+'" font-size="10" fill="'+C_MID+'" font-family="DM Mono,monospace">objectif '+TOPIC_TARGET+'%</text>';
+  const targets=TOPIC_ORDER.map((t,i)=>pt(i,val(t)==null?0:val(t)));
+  g+='<polygon id="tsRadarPoly" points="'+TOPIC_ORDER.map(()=>cx+','+cy).join(' ')+'" fill="url(#radG)" stroke="'+C_GOLD+'" stroke-width="2.2" stroke-linejoin="round" filter="url(#radSh)"/>';
+  TOPIC_ORDER.forEach((t,i)=>{
+    const v=val(t), c=v==null?'#9aa8a1':statusColor(v), sel=tsTopic===t;
+    g+='<circle class="rdv" data-i="'+i+'" cx="'+cx+'" cy="'+cy+'" r="'+(sel?8:6)+'" fill="'+(v==null?'#fff':c)+'" stroke="'+(sel?C_TXT:'#fff')+'" stroke-width="'+(sel?2.5:2)+'" style="cursor:pointer"/>';
+    const lp=pt(i,100+16), ca=Math.cos(ang(i)), anchor=Math.abs(ca)<0.25?'middle':(ca>0?'start':'end');
+    g+='<text class="rdl" data-i="'+i+'" x="'+lp[0].toFixed(1)+'" y="'+(lp[1]+4).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="'+(sel?700:600)+'" fill="'+(sel?C_GOLD:C_TXT)+'" font-family="DM Sans,sans-serif" style="cursor:pointer">'+TOPIC_SHORT[t]+(v==null?'':' <tspan fill="'+statusColor(v)+'" font-weight="700">'+v+'%</tspan>')+'</text>';
+  });
+  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Radar de réussite par sujet" style="max-width:560px;display:block;margin:0 auto">'+g+'</svg>';
+  const poly=box.querySelector('#tsRadarPoly'), verts=[...box.querySelectorAll('.rdv')];
+  const t0=performance.now(), dur=reducedMotion()?1:750;
+  (function step(now){
+    const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+    const pts=targets.map(tg=>[cx+(tg[0]-cx)*e, cy+(tg[1]-cy)*e]);
+    poly.setAttribute('points',pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '));
+    verts.forEach((v,i)=>{ v.setAttribute('cx',pts[i][0].toFixed(1)); v.setAttribute('cy',pts[i][1].toFixed(1)); });
+    if(k<1) requestAnimationFrame(step);
+  })(t0);
+  const tipFor=i=>{ const t=TOPIC_ORDER[i], x=stats[t]; return '<strong>'+escH(t)+'</strong><br>'+(x&&x.n?(Math.round(x.c/x.n*100)+'% · '+x.c+' / '+x.n+' correctes<br><em>clic : voir les questions ratées</em>'):'aucune donnée'); };
+  box.querySelectorAll('.rdv,.rdl').forEach(el=>{
+    const i=+el.dataset.i;
+    el.addEventListener('mouseenter',ev=>showTip(tipFor(i),ev)); el.addEventListener('mousemove',moveTip); el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('click',()=>{ hideTip(); selectTopic(TOPIC_ORDER[i]); });
+  });
+}
+function renderHeatmap(all){
+  const box=document.getElementById('tsHeat'); if(!box) return;
+  const ids=Object.keys(mocks).filter(k=>all.some(e=>e.mockId===k));
+  if(!ids.length){ box.innerHTML='<p class="sub" style="font-size:12px">Pas encore de données.</p>'; return; }
+  const per={}; ids.forEach(k=>{ per[k]=computeTopicStats(all.filter(e=>e.mockId===k),tsMode,{},tsPart); });
+  let h='<div style="overflow-x:auto"><table class="hmtbl"><thead><tr><th></th>'+ids.map(k=>'<th>'+escH((mocks[k].name||k).replace(/^Mock\s*/i,'M'))+'</th>').join('')+'</tr></thead><tbody>';
+  TOPIC_ORDER.forEach(t=>{
+    h+='<tr><td class="hmt'+(tsTopic===t?' sel':'')+'" data-t="'+encodeURIComponent(t)+'">'+escH(TOPIC_SHORT[t])+'</td>';
+    ids.forEach(k=>{
+      const x=per[k][t];
+      if(!x||!x.n){ h+='<td class="hmc e">·</td>'; return; }
+      const p=Math.round(x.c/x.n*100);
+      h+='<td class="hmc" data-k="'+k+'" data-t="'+encodeURIComponent(t)+'" data-tip="'+escH((mocks[k].name||k)+' · '+t+' : '+p+'% ('+x.c+'/'+x.n+')')+'" style="background:'+heatColor(p)+'">'+p+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div><div class="hmleg"><span>0%</span><i></i><span>100%</span><span style="margin-left:10px">· = pas de données · clic sur une case : détail</span></div>';
+  box.innerHTML=h;
+  box.querySelectorAll('.hmc[data-k]').forEach(td=>{
+    td.addEventListener('mouseenter',ev=>showTip(escH(td.dataset.tip),ev)); td.addEventListener('mousemove',moveTip); td.addEventListener('mouseleave',hideTip);
+    td.addEventListener('click',()=>{ hideTip(); tsMock=td.dataset.k; tsTopic=decodeURIComponent(td.dataset.t); renderTopicStats(); const d=document.getElementById('tsDrill'); if(d&&d.scrollIntoView) d.scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'nearest'}); });
+  });
+  box.querySelectorAll('.hmt').forEach(td=>td.addEventListener('click',()=>selectTopic(decodeURIComponent(td.dataset.t))));
+}
+function renderDrill(entries){
+  const box=document.getElementById('tsDrill'); if(!box) return;
+  if(!tsTopic){ box.innerHTML=''; return; }
+  const last={};
+  [...entries].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>{
+    (e.detail||[]).forEach(it=>{
+      if(tsPart!=='all'&&partOfItem(e,it)!==tsPart) return;
+      if(topicOfDetail(e,it)!==tsTopic) return;
+      last[(e.mockId||'')+'|'+it.q]={e,it,ok:it.u===it.a};
+    });
+  });
+  const wrong=Object.values(last).filter(x=>!x.ok).sort((a,b)=>new Date(b.e.date)-new Date(a.e.date));
+  const L='ABCDEFG'; const ch=(it,l)=>{ const i=L.indexOf(l); return i>=0&&it.c&&it.c[i]!=null?l+') '+String(it.c[i]).replace(/^[A-G][\.\)]\s*/,''):(l||'—'); };
+  let h='<div class="tsdrill"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><div class="hchart-title" style="margin:0;flex:1">QUESTIONS RATÉES — '+escH(topicLabel(tsTopic)).toUpperCase()+' ('+wrong.length+')</div><button class="opt" id="tsDrillClose">✕ Fermer</button></div>';
+  if(!wrong.length) h+='<p class="sub" style="margin:6px 0">Aucune question ratée sur ce sujet avec les filtres actuels (dernière tentative de chaque question). 👏</p>';
+  wrong.slice(0,40).forEach(x=>{
+    const d=new Date(x.e.date); const ds=isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+    const pt=partOfItem(x.e,x.it);
+    h+='<div class="drq"><div class="drm">'+escH((x.e.mockName||x.e.mockId||'')+(pt?' · Partie '+pt.slice(1):'')+(ds?' · '+ds:'')+(x.it.vigTitle?' · '+x.it.vigTitle:''))+'</div>'
+      +'<div class="drt">'+escH(String(x.it.q).replace(/\s+/g,' ').slice(0,260))+(String(x.it.q).length>260?'…':'')+'</div>'
+      +'<div class="dra"><span class="bad">Ta réponse : '+escH(ch(x.it,x.it.u))+'</span><span class="good">Bonne réponse : '+escH(ch(x.it,x.it.a))+'</span></div></div>';
+  });
+  if(wrong.length>40) h+='<p class="sub" style="font-size:11px">… et '+(wrong.length-40)+' autre(s).</p>';
+  box.innerHTML=h+'</div>';
+  document.getElementById('tsDrillClose').onclick=()=>{ tsTopic=null; renderTopicStats(); };
+}
+function renderTopicDash(entries,all,stats,rows){
+  renderKpis(stats,rows,entries);
+  renderRadar(stats);
+  renderHeatmap(all);
+  renderDrill(entries);
+  animateBars(document.getElementById('tsRows'));
+}
 let tsMock=null, tsMode='all';
 function openTopicStats(){ setScreen('topics'); renderTopicStats(); }
 function computeTopicStats(entries,mode,meta,part){
@@ -4518,13 +4696,15 @@ function renderTopicStats(){
   [['all','Toutes les parties'],['s1','Partie 1'],['s2','Partie 2']].forEach(([v,l])=>pf.appendChild(chip(l,tsPart===v,()=>{tsPart=v;renderTopicStats();})));
   renderPartTable();
   const stats=computeTopicStats(entries,tsMode,meta,tsPart);
-  const r=topicRowsHTML(stats,true);
+  const r=topicRowsHTML(stats,true,true);
   const noDetail=getHistory().filter(e=>!(e.detail&&e.detail.length)&&(!tsMock||e.mockId===tsMock)).length;
   const tot=r.rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
   document.getElementById('tsSub').textContent=entries.length?(entries.length+' session(s) · '+tot.n+' réponses'+(tsPart!=='all'?' (Partie '+tsPart.slice(1)+')':'')+' · réussite '+(tot.n?Math.round(tot.c/tot.n*100):0)+'%'):'Aucune session enregistrée pour le moment.';
   const low=r.rows.filter(x=>x.p<TOPIC_TARGET);
   document.getElementById('tsAlert').innerHTML=low.length?'<div class="tsalert">⚠ '+low.length+' sujet(s) sous '+TOPIC_TARGET+'% : <strong>'+low.map(x=>topicLabel(x.t)+' ('+x.p+'%)').join(', ')+'</strong></div>':(r.rows.length?'<div class="tsalert ok">✅ Tous les sujets travaillés sont à '+TOPIC_TARGET+'% ou plus.</div>':'');
   document.getElementById('tsRows').innerHTML=r.html;
+  document.querySelectorAll('#tsRows .tsrow.clk').forEach(row=>row.addEventListener('click',()=>selectTopic(decodeURIComponent(row.dataset.t))));
+  renderTopicDash(entries,all,stats,r.rows);
   document.getElementById('tsNote').textContent="Sujets : indiqués dans les PDF pour les Mocks 1 à 5 ; classés d'après le contenu pour les Mocks 6 à 8 et 3 vignettes sans libellé (classement validé). Les anciennes sessions sont rattachées par le titre de la vignette. « Peu de données » = moins de 8 réponses."+(noDetail?' · '+noDetail+' ancienne(s) session(s) enregistrée(s) sans détail par question ne peuvent pas être comptées.':'')+(meta.est?' · '+meta.est+' réponse(s) rattachée(s) par mots-clés (estimation).':'');
 }
 
