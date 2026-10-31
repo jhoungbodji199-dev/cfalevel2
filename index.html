@@ -515,6 +515,12 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 .tsalert{margin:12px 0;padding:10px 14px;border:1px solid rgba(185,56,56,.4);border-radius:8px;background:rgba(185,56,56,.07);font-size:13px;color:var(--red)}
 .tsalert.ok{border-color:rgba(35,132,67,.4);background:rgba(35,132,67,.07);color:var(--green)}
 @media(max-width:700px){.tsrow{grid-template-columns:1fr}.hist-btn.tsbtn{right:auto;left:14px}}
+
+.pstbl{width:100%;border-collapse:collapse;font-size:13px}
+.pstbl th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);font-weight:600;padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.pstbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.pstbl td.pn{font-weight:600;white-space:nowrap}
+.pstbl small{display:block;color:var(--dim);font-size:11px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -751,7 +757,10 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
   <div class="card">
     <h2 style="margin-bottom:4px">📚 Statistiques par sujet</h2>
     <p class="sub" id="tsSub"></p>
+    <div id="tsParts"></div>
+    <div class="hchart-title" style="margin:16px 0 6px">PAR SUJET</div>
     <div class="hfilter" id="tsMockFilter"></div>
+    <div class="hfilter" id="tsPartFilter"></div>
     <div class="hfilter" id="tsModeFilter"></div>
     <div id="tsAlert"></div>
     <div id="tsRows"></div>
@@ -4425,12 +4434,67 @@ function renderResTopics(){
   const r=topicRowsHTML(st,false);
   box.innerHTML=r.rows.length?'<div class="hchart-title" style="margin:6px 0 4px">RÉSULTAT PAR SUJET (cette session)</div>'+r.html:'';
 }
+
+// ── Statistiques par partie (Partie 1 = Session 1, Partie 2 = Session 2) ──
+let tsPart='all';
+let _titlePart=null;
+function titlePartMap(){
+  if(_titlePart) return _titlePart;
+  _titlePart={};
+  Object.keys(mocks).forEach(k=>{ _titlePart[k]={}; ['s1','s2'].forEach(sk=>(mocks[k][sk]||[]).forEach(v=>{ if(v.title) _titlePart[k][v.title]=sk; })); });
+  return _titlePart;
+}
+function partOfItem(entry,item){
+  if(entry.sess==='s1'||entry.sess==='s2') return entry.sess;
+  return (titlePartMap()[entry.mockId]||{})[item.vigTitle]||null;
+}
+function expectedQuestions(mockId,sess){
+  const m=mocks[mockId]; if(!m) return null;
+  const cnt=a=>(a||[]).reduce((n,v)=>n+(v.questions||[]).length,0);
+  return sess==='s1'?cnt(m.s1):sess==='s2'?cnt(m.s2):cnt(m.s1)+cnt(m.s2);
+}
+function computePartStats(hist){
+  const out={};
+  [...hist].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>{
+    if(!e.mockId||!mocks[e.mockId]) return;
+    if(e.questions!==expectedQuestions(e.mockId,e.sess)) return;   // on ignore les "refaire les erreurs" et sessions partielles
+    const o=(out[e.mockId]=out[e.mockId]||{s1:[],s2:[]});
+    if(e.sess==='s1'||e.sess==='s2'){ o[e.sess].push({p:e.pct,d:e.date}); return; }
+    if(e.sess==='both'&&e.detail&&e.detail.length){
+      const acc={s1:{n:0,c:0},s2:{n:0,c:0}};
+      e.detail.forEach(it=>{ const pt=partOfItem(e,it); if(!pt) return; acc[pt].n++; if(it.u===it.a) acc[pt].c++; });
+      ['s1','s2'].forEach(k=>{ if(acc[k].n) o[k].push({p:Math.round(acc[k].c/acc[k].n*100),d:e.date}); });
+    }
+  });
+  return out;
+}
+function renderPartTable(){
+  const box=document.getElementById('tsParts'); if(!box) return;
+  const ps=computePartStats(getHistory());
+  const ids=Object.keys(mocks).filter(k=>ps[k]&&(ps[k].s1.length||ps[k].s2.length));
+  if(!ids.length){ box.innerHTML='<p class="sub" style="font-size:12px;margin:10px 0">Aucune session complète enregistrée : les résultats par partie apparaîtront ici.</p>'; return; }
+  const colr=p=>p<TOPIC_TARGET?'var(--red)':p<80?'var(--orange)':'var(--green)';
+  const cell=a=>{
+    if(!a.length) return '<span style="color:var(--dim)">—</span>';
+    const last=a[a.length-1].p, best=Math.max(...a.map(x=>x.p)), avg=Math.round(a.reduce((t,x)=>t+x.p,0)/a.length);
+    return '<strong style="color:'+colr(last)+'">'+last+'%</strong><small>moy. '+avg+'% · meilleur '+best+'% · '+a.length+' essai'+(a.length>1?'s':'')+'</small>';
+  };
+  let h='<div class="hchart-title" style="margin:14px 0 6px">PAR MOCK ET PAR PARTIE (sessions complètes · dernier résultat en gras)</div><div style="overflow-x:auto"><table class="pstbl"><thead><tr><th>Mock</th><th>Partie 1</th><th>Partie 2</th><th>Écart P2 − P1</th></tr></thead><tbody>';
+  ids.forEach(k=>{
+    const a1=ps[k].s1, a2=ps[k].s2;
+    let gap='<span style="color:var(--dim)">—</span>';
+    if(a1.length&&a2.length){ const d=a2[a2.length-1].p-a1[a1.length-1].p; gap='<strong style="color:'+(d<0?'var(--red)':d>0?'var(--green)':'var(--dim)')+'">'+(d>0?'+':'')+d+' pt</strong>'; }
+    h+='<tr><td class="pn">'+(mocks[k].name||k)+'</td><td>'+cell(a1)+'</td><td>'+cell(a2)+'</td><td>'+gap+'</td></tr>';
+  });
+  box.innerHTML=h+'</tbody></table></div>';
+}
 let tsMock=null, tsMode='all';
 function openTopicStats(){ setScreen('topics'); renderTopicStats(); }
-function computeTopicStats(entries,mode,meta){
+function computeTopicStats(entries,mode,meta,part){
   const stats={}, last={};
   [...entries].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>{
     (e.detail||[]).forEach(it=>{
+      if(part&&part!=='all'&&partOfItem(e,it)!==part) return;
       const t=topicOfDetail(e,it,meta), ok=it.u===it.a;
       if(mode==='last'){ last[(e.mockId||'')+'|'+it.q]={t,ok}; }
       else{ (stats[t]=stats[t]||{n:0,c:0}).n++; if(ok) stats[t].c++; }
@@ -4450,11 +4514,14 @@ function renderTopicStats(){
   mo.appendChild(chip('Toutes les tentatives',tsMode==='all',()=>{tsMode='all';renderTopicStats();}));
   mo.appendChild(chip('Dernière tentative de chaque question',tsMode==='last',()=>{tsMode='last';renderTopicStats();}));
   const meta={est:0};
-  const stats=computeTopicStats(entries,tsMode,meta);
+  const pf=document.getElementById('tsPartFilter'); pf.innerHTML='';
+  [['all','Toutes les parties'],['s1','Partie 1'],['s2','Partie 2']].forEach(([v,l])=>pf.appendChild(chip(l,tsPart===v,()=>{tsPart=v;renderTopicStats();})));
+  renderPartTable();
+  const stats=computeTopicStats(entries,tsMode,meta,tsPart);
   const r=topicRowsHTML(stats,true);
   const noDetail=getHistory().filter(e=>!(e.detail&&e.detail.length)&&(!tsMock||e.mockId===tsMock)).length;
   const tot=r.rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
-  document.getElementById('tsSub').textContent=entries.length?(entries.length+' session(s) · '+tot.n+' réponses · réussite globale '+(tot.n?Math.round(tot.c/tot.n*100):0)+'%'):'Aucune session enregistrée pour le moment.';
+  document.getElementById('tsSub').textContent=entries.length?(entries.length+' session(s) · '+tot.n+' réponses'+(tsPart!=='all'?' (Partie '+tsPart.slice(1)+')':'')+' · réussite '+(tot.n?Math.round(tot.c/tot.n*100):0)+'%'):'Aucune session enregistrée pour le moment.';
   const low=r.rows.filter(x=>x.p<TOPIC_TARGET);
   document.getElementById('tsAlert').innerHTML=low.length?'<div class="tsalert">⚠ '+low.length+' sujet(s) sous '+TOPIC_TARGET+'% : <strong>'+low.map(x=>topicLabel(x.t)+' ('+x.p+'%)').join(', ')+'</strong></div>':(r.rows.length?'<div class="tsalert ok">✅ Tous les sujets travaillés sont à '+TOPIC_TARGET+'% ou plus.</div>':'');
   document.getElementById('tsRows').innerHTML=r.html;
