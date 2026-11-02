@@ -5714,24 +5714,63 @@ async function driveLoadOrCreate(){
     const q=encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
     const res=await driveApi(`files?q=${q}&fields=files(id,modifiedTime)`);
     const data=await res.json();
-    if(data.files&&data.files.length>0){driveFileId=data.files[0].id;await driveMergeFromRemote();}
-    else{await driveCreateFile();driveToast('☁️ Fichier créé sur Drive');}
+    if(data.files&&data.files.length>0){
+      driveFileId=data.files[0].id;
+      await driveMergeFromRemote();
+      // Répercute sur Drive l'union local + distant après la fusion initiale.
+      await driveSaveToRemote();
+    }else{await driveCreateFile();driveToast('☁️ Fichier créé sur Drive');}
     driveSetState('connected','✓ Drive');
   }catch(e){driveSetState('error','⚠ Drive');driveToast('❌ Erreur Drive : '+e.message);}
 }
+// Fusionne les historiques par identifiant, et non par nombre d'entrées.
+// Cela conserve les sessions propres à chaque copie sans remplacer un historique
+// plus récent par un historique simplement plus long.
+function mergeHistoryEntries(localHist,remoteHist){
+  const byId=new Map();
+  const keyOf=(e)=>{
+    if(e&&e.id!==undefined&&e.id!==null)return 'id:'+String(e.id);
+    return 'fallback:'+[e?.mockId||'',e?.date||'',e?.sess||'',e?.questions||'',e?.correct||''].join('|');
+  };
+  const add=(entry)=>{
+    if(!entry||typeof entry!=='object')return;
+    const key=keyOf(entry),prev=byId.get(key);
+    if(!prev){byId.set(key,entry);return;}
+    // En cas de collision d'identifiant, garder la version datée la plus récente.
+    const prevTime=Date.parse(prev.date||'')||0;
+    const nextTime=Date.parse(entry.date||'')||0;
+    if(nextTime>prevTime)byId.set(key,entry);
+  };
+  (Array.isArray(localHist)?localHist:[]).forEach(add);
+  (Array.isArray(remoteHist)?remoteHist:[]).forEach(add);
+  return [...byId.values()].sort((a,b)=>(Date.parse(a.date||'')||0)-(Date.parse(b.date||'')||0));
+}
+
 async function driveMergeFromRemote(){
   const res=await driveApi(`files/${driveFileId}?alt=media`);
   const remote=await res.json();let merged=false;
   for(const key of DRIVE_SYNC_KEYS){
     const localRaw=localStorage.getItem(key),remoteVal=remote[key];
-    if(!remoteVal)continue;
+    if(remoteVal===undefined||remoteVal===null)continue;
+    if(key===HIST_KEY){
+      try{
+        const local=localRaw?JSON.parse(localRaw):[];
+        const combined=mergeHistoryEntries(local,remoteVal);
+        const before=JSON.stringify(Array.isArray(local)?local:[]);
+        const after=JSON.stringify(combined);
+        if(before!==after){localStorage.setItem(key,after);merged=true;}
+      }catch(e){
+        // Ne jamais remplacer une donnée locale illisible automatiquement.
+      }
+      continue;
+    }
     if(!localRaw){localStorage.setItem(key,JSON.stringify(remoteVal));merged=true;}
     else{
       try{
         const local=JSON.parse(localRaw);
         if(Array.isArray(remoteVal)&&Array.isArray(local)){
           if(remoteVal.length>local.length){localStorage.setItem(key,JSON.stringify(remoteVal));merged=true;}
-        }else if(typeof remoteVal==='object'&&!Array.isArray(remoteVal)){
+        }else if(typeof remoteVal==='object'&&!Array.isArray(remoteVal)&&remoteVal!==null){
           let changed=false;
           for(const k of Object.keys(remoteVal)){if(!local[k]){local[k]=remoteVal[k];changed=true;}}
           if(changed){localStorage.setItem(key,JSON.stringify(local));merged=true;}
@@ -5739,8 +5778,8 @@ async function driveMergeFromRemote(){
       }catch(e){}
     }
   }
-  if(merged){driveToast('☁️ Progression chargée depuis Drive');renderLibrary();}
-  else driveToast('✅ Déjà à jour');
+  if(merged){driveToast('☁️ Historique fusionné depuis Drive');renderLibrary();}
+  else driveToast('✅ Historique déjà à jour');
 }
 async function driveCreateFile(){
   const payload=_buildDrivePayload();
