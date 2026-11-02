@@ -948,10 +948,9 @@
   <div class="header-right">
     <button class="btn-back-header" id="btnBackHeader" onclick="goHome()">← Accueil</button>
     <button class="btn-stats-header" id="btnStatsHeader" onclick="goStats()" title="Statistiques de progression"><span class="stats-icon">📊</span><span>Stats</span></button>
-    <button class="btn-drive" id="btnDrive" onclick="driveAction()" title="Sync Google Drive">
-      <div class="drive-dot" id="driveDot"></div>
-      <span id="driveBtnLabel">Drive</span>
-    </button>
+    <button class="btn-drive" id="btnDriveLoad" onclick="driveLoadButton()" title="Charger la dernière sauvegarde Google Drive">↓ Charger</button>
+    <button class="btn-drive" id="btnDriveSave" onclick="driveSaveButton()" title="Synchroniser la progression actuelle vers Google Drive">↑ Sauvegarder</button>
+    <span id="btnDrive" style="display:none"><span id="driveDot"></span><span id="driveBtnLabel">Drive</span></span>
     <span class="chrono-mini" id="chronoMini">00:00:00</span>
     <span id="headerContext">Practice Hub</span>
   </div>
@@ -986,17 +985,7 @@
 
   <div class="stats-mini" id="homeStatsMini"></div>
 
-  <section class="backup-panel" aria-label="Sauvegarde et restauration">
-    <h3>🗄️ Sauvegarde et restauration des données</h3>
-    <p>Analyse une ancienne sauvegarde JSON avant toute modification. La restauration conserve les données locales et fusionne les sessions, tentatives, scores et erreurs sans supprimer l’historique. Une copie de sécurité est téléchargée avant l’application.</p>
-    <div class="backup-actions">
-      <button class="primary" onclick="document.getElementById('backupFileInput').click()">📥 Analyser / restaurer un fichier</button>
-      <button onclick="downloadProgressBackup()">💾 Télécharger une sauvegarde complète</button>
-      <button onclick="saveProgressBackupToDrive()">☁️ Sauvegarder sur Google Drive</button>
-    </div>
-    <input id="backupFileInput" type="file" accept=".json,application/json" onchange="analyzeBackupFile(event)">
-    <div id="backupReport" class="backup-report" role="status" aria-live="polite"></div>
-  </section>
+
 
   <div class="section-title">Thématiques disponibles</div>
   <div class="theme-grid" id="themeGrid"></div>
@@ -2602,6 +2591,7 @@ let driveFileId = null;        // ID du fichier sur Drive
 let driveSyncing = false;
 let driveConnected = false;
 let driveSaveTimeout = null;
+let driveAfterAuthAction = null;
 
 // ---- UI helpers ----
 function driveSetState(state, label) {
@@ -2621,15 +2611,19 @@ function driveToast(msg, duration) {
 }
 
 // ---- OAuth via Google Identity Services ----
-function driveAction() {
-  if (driveConnected) {
-    driveSync();          // si déjà connecté → sync manuelle
-  } else {
-    driveLogin();
-  }
+function driveLoadButton() {
+  if (driveConnected && driveToken) return driveLoadLatest();
+  driveAfterAuthAction = 'load';
+  driveLogin();
+}
+function driveSaveButton() {
+  if (driveConnected && driveToken) return driveSaveLatest();
+  driveAfterAuthAction = 'save';
+  driveLogin();
 }
 
 function driveLogin() {
+  if (!driveAfterAuthAction) driveAfterAuthAction = 'load';
   driveSetState('syncing', 'Connexion…');
   // Charge le script GIS à la demande
   if (!window.google || !window.google.accounts) {
@@ -2677,8 +2671,11 @@ function _driveStartAuth() {
       driveToken = resp.access_token;
       driveConnected = true;
       driveSetState('connected', '✓ Drive');
+      const action = driveAfterAuthAction || 'load';
+      driveAfterAuthAction = null;
       driveToast('✅ Connecté à Google Drive');
-      driveLoadOrCreate();
+      if (action === 'save') driveSaveLatest();
+      else driveLoadLatest();
     }
   });
   client.requestAccessToken();
@@ -2918,23 +2915,54 @@ function downloadProgressBackup() {
 Sessions : ${summary.sessions} · réponses : ${summary.answers}
 Tentatives : ${summary.attempts} · scores : ${summary.scoreBatches} · erreurs : ${summary.errorIds} · chrono : ${summary.chronoSessions}`);
 }
-async function saveProgressBackupToDrive() {
-  if (!driveConnected || !driveToken) {
-    driveToast('Connecte-toi d’abord avec le bouton Drive en haut de page.');
-    driveLogin();
-    return;
-  }
+async function driveFindLatestFile() {
+  const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+  const res = await driveApi(`files?q=${q}&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime)`);
+  const data = await res.json();
+  return data.files?.[0] || null;
+}
+
+// Le bouton Charger remplace la progression locale par le dernier fichier Drive.
+async function driveLoadLatest() {
+  if (!driveToken || driveSyncing) return;
+  driveSyncing = true;
+  driveSetState('syncing', 'Chargement…');
   try {
-    if (!driveFileId) await driveLoadOrCreate();
-    if (!driveFileId) throw new Error('Fichier Drive introuvable ou non créé.');
-    await driveSaveToRemote();
+    const file = await driveFindLatestFile();
+    if (!file) throw new Error('Aucune sauvegarde CFA trouvée sur Google Drive. Clique d’abord sur Sauvegarder.');
+    driveFileId = file.id;
+    const response = await driveApi(`files/${driveFileId}?alt=media`);
+    const remote = await response.json();
+    validateBackupPayload(remote);
+    for (const key of DRIVE_SYNC_KEYS) localStorage.setItem(key, JSON.stringify(remote[key] || {}));
+    reloadProgressState();
+    refreshProgressViews();
+    driveSetState('connected', '✓ Drive');
+    const summary = summarizeProgressPayload(remote);
+    driveToast(`✓ Dernière sauvegarde chargée · ${summary.sessions} sessions · ${summary.answers} réponses` , 5000);
+  } catch (e) {
+    driveSetState('error', '⚠ Drive');
+    driveToast('❌ Chargement Drive : ' + e.message, 6000);
+  } finally { driveSyncing = false; }
+}
+
+// Le bouton Sauvegarder envoie l'état local complet vers le fichier Drive le plus récent.
+async function driveSaveLatest() {
+  if (!driveToken || driveSyncing) return;
+  driveSyncing = true;
+  driveSetState('syncing', 'Sauvegarde…');
+  try {
+    const file = await driveFindLatestFile();
+    if (file) driveFileId = file.id;
+    else await driveCreateFile();
+    if (file) await driveSaveToRemote();
+    driveSetState('connected', '✓ Drive');
     const summary = summarizeProgressPayload(_buildDrivePayload());
-    showBackupReport(`SAUVEGARDE DRIVE TERMINÉE
-Sessions : ${summary.sessions} · réponses : ${summary.answers}
-Tentatives : ${summary.attempts} · scores : ${summary.scoreBatches} · erreurs : ${summary.errorIds} · chrono : ${summary.chronoSessions}
-Date : ${new Date().toLocaleString()}`);
-    driveToast('☁️ Sauvegarde complète envoyée sur Drive');
-  } catch(e) { driveToast('❌ Sauvegarde Drive : ' + e.message, 6000); showBackupReport('❌ Échec de la sauvegarde Drive : ' + e.message); }
+    driveToast(`✓ Sauvegarde Drive effectuée · ${summary.sessions} sessions · ${summary.answers} réponses`, 5000);
+  } catch (e) {
+    driveSetState('error', '⚠ Drive');
+    driveToast('❌ Sauvegarde Drive : ' + e.message, 6000);
+  } finally { driveSyncing = false; }
 }
 
 // ---- Créer le fichier sur Drive ----
