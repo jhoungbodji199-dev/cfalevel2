@@ -566,13 +566,13 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 </div>
 <div class="drive-bar">
   <span class="gchrono-mini" id="gchronoMini"><span class="dot"></span><span id="gchronoMiniTxt">00:00:00</span></span>
-  <button class="btn-drive" id="btnTheme" type="button" onclick="toggleTheme()" title="Basculer entre clair doux et sombre doux" aria-label="Changer de thème">
-    <span id="themeIcon" aria-hidden="true">☾</span>
-    <span id="themeBtnLabel">Mode sombre</span>
+  <button class="btn-drive" id="btnDriveLoad" type="button" onclick="driveLoadAction()">
+    <div class="drive-dot" id="driveLoadDot"></div>
+    <span id="driveLoadLabel">↓ Charger</span>
   </button>
-  <button class="btn-drive" id="btnDrive" onclick="driveAction()">
-    <div class="drive-dot" id="driveDot"></div>
-    <span id="driveBtnLabel">Drive</span>
+  <button class="btn-drive" id="btnDriveSave" type="button" onclick="driveSaveAction()">
+    <div class="drive-dot" id="driveSaveDot"></div>
+    <span id="driveSaveLabel">↑ Sauvegarder</span>
   </button>
 </div>
 <div id="driveToast"></div>
@@ -5669,36 +5669,42 @@ const DRIVE_CLIENT_ID='351870287508-mpgb979e45hhe7r74kcjclhdtmfachfp.apps.google
 const DRIVE_SCOPES='https://www.googleapis.com/auth/drive.file';
 const DRIVE_SYNC_KEYS=[SAVE_KEY, HIST_KEY, 'cfa2_corrections'];
 let driveToken=null,driveFileId=null,driveConnected=false,driveSyncing=false,driveSaveTimeout=null;
+let drivePendingAction=null;
 
 function driveSetState(state,label){
-  const btn=document.getElementById('btnDrive'),dot=document.getElementById('driveDot'),lbl=document.getElementById('driveBtnLabel');
-  btn.className='btn-drive'+(state==='connected'?' connected':state==='syncing'?' syncing':state==='error'?' error':'');
-  dot.className='drive-dot'+(state==='syncing'?' pulse':'');
-  lbl.textContent=label;
+  const loadBtn=document.getElementById('btnDriveLoad');
+  const saveBtn=document.getElementById('btnDriveSave');
+  const loadDot=document.getElementById('driveLoadDot');
+  const saveDot=document.getElementById('driveSaveDot');
+  const loadLabel=document.getElementById('driveLoadLabel');
+  const saveLabel=document.getElementById('driveSaveLabel');
+  const busy=state==='syncing';
+  [loadBtn,saveBtn].forEach(b=>{if(b)b.className='btn-drive'+(state==='connected'?' connected':busy?' syncing':state==='error'?' error':'');});
+  [loadDot,saveDot].forEach(d=>{if(d)d.className='drive-dot'+(busy?' pulse':'');});
+  if(loadLabel)loadLabel.textContent=busy&&drivePendingAction==='load'?'Chargement…':'↓ Charger';
+  if(saveLabel)saveLabel.textContent=busy&&drivePendingAction==='save'?'Sauvegarde…':'↑ Sauvegarder';
   driveConnected=(state==='connected');
 }
 function driveToast(msg){
   const t=document.getElementById('driveToast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
-function driveAction(){
-  if(driveConnected){driveSync();}else{driveConnect();}
-}
-function driveConnect(){
+function driveConnect(action){
+  drivePendingAction=action;
   if(!window.google){
     const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
-    s.onload=()=>_initDriveClient();document.head.appendChild(s);
+    s.onload=()=>_initDriveClient();s.onerror=()=>{driveSetState('error');driveToast('❌ Impossible de charger Google');};document.head.appendChild(s);
   }else{_initDriveClient();}
 }
 function _initDriveClient(){
   const client=google.accounts.oauth2.initTokenClient({
     client_id:DRIVE_CLIENT_ID,scope:DRIVE_SCOPES,
-    callback:(resp)=>{
-      if(resp.error){driveSetState('error','⚠ Drive');driveToast('❌ Erreur auth : '+resp.error);return;}
+    callback:async(resp)=>{
+      if(resp.error){driveSetState('error');driveToast('❌ Erreur auth : '+resp.error);drivePendingAction=null;return;}
       driveToken=resp.access_token;
-      driveSetState('connected','✓ Drive');
-      driveToast('✅ Connecté à Google Drive');
-      driveLoadOrCreate();
+      const action=drivePendingAction;drivePendingAction=null;
+      if(action==='load')await driveLoadAction();
+      else if(action==='save')await driveSaveAction();
     }
   });
   client.requestAccessToken();
@@ -5708,20 +5714,43 @@ async function driveApi(path,opts){
   if(!res.ok)throw new Error('Drive API '+res.status);
   return res;
 }
-async function driveLoadOrCreate(){
-  driveSetState('syncing','↕ Sync…');
+async function driveFindFile(){
+  if(driveFileId)return driveFileId;
+  const q=encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
+  const res=await driveApi(`files?q=${q}&orderBy=modifiedTime desc&pageSize=10&fields=files(id,modifiedTime)`);
+  const data=await res.json();
+  if(data.files&&data.files.length)driveFileId=data.files[0].id;
+  return driveFileId;
+}
+async function driveLoadAction(){
+  if(!driveToken){driveConnect('load');return;}
+  if(driveSyncing)return;
+  driveSyncing=true;drivePendingAction='load';driveSetState('syncing');
+  let finalState='connected';
   try{
-    const q=encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`);
-    const res=await driveApi(`files?q=${q}&fields=files(id,modifiedTime)`);
-    const data=await res.json();
-    if(data.files&&data.files.length>0){
-      driveFileId=data.files[0].id;
-      await driveMergeFromRemote();
-      // Répercute sur Drive l'union local + distant après la fusion initiale.
-      await driveSaveToRemote();
-    }else{await driveCreateFile();driveToast('☁️ Fichier créé sur Drive');}
-    driveSetState('connected','✓ Drive');
-  }catch(e){driveSetState('error','⚠ Drive');driveToast('❌ Erreur Drive : '+e.message);}
+    if(!await driveFindFile())throw new Error('Aucune sauvegarde trouvée sur Google Drive');
+    const res=await driveApi(`files/${driveFileId}?alt=media`);
+    const remote=await res.json();
+    for(const key of DRIVE_SYNC_KEYS){
+      if(Object.prototype.hasOwnProperty.call(remote,key))localStorage.setItem(key,JSON.stringify(remote[key]));
+    }
+    driveSetState('connected');driveToast('✓ Dernière version Drive chargée');
+    if(typeof renderLibrary==='function')renderLibrary();
+    if(typeof renderHistory==='function')renderHistory();
+  }catch(e){finalState='error';driveToast('❌ Chargement impossible : '+e.message);}
+  finally{driveSyncing=false;drivePendingAction=null;driveSetState(finalState);}
+}
+async function driveSaveAction(){
+  if(!driveToken){driveConnect('save');return;}
+  if(driveSyncing)return;
+  driveSyncing=true;drivePendingAction='save';driveSetState('syncing');
+  let finalState='connected';
+  try{
+    if(!await driveFindFile())await driveCreateFile();
+    else await driveSaveToRemote();
+    driveToast('✓ Données sauvegardées sur Google Drive');
+  }catch(e){finalState='error';driveToast('❌ Sauvegarde impossible : '+e.message);}
+  finally{driveSyncing=false;drivePendingAction=null;driveSetState(finalState);}
 }
 // Fusionne les historiques par identifiant, et non par nombre d'entrées.
 // Cela conserve les sessions propres à chaque copie sans remplacer un historique
@@ -5791,7 +5820,8 @@ async function driveCreateFile(){
 }
 async function driveSaveToRemote(){
   if(!driveToken||!driveFileId)return;
-  await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+driveToken,'Content-Type':DRIVE_MIME},body:JSON.stringify(_buildDrivePayload())});
+  const res=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,{method:'PATCH',headers:{'Authorization':'Bearer '+driveToken,'Content-Type':DRIVE_MIME},body:JSON.stringify(_buildDrivePayload())});
+  if(!res.ok)throw new Error('Écriture Drive '+res.status);
 }
 function _buildDrivePayload(){
   const p={_savedAt:Date.now()};
