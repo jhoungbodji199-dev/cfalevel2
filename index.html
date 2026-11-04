@@ -409,8 +409,9 @@ body{background:var(--navy);color:var(--text);-webkit-font-smoothing:antialiased
 
 
 /* Theme switch */
-#btnTheme{border-color:#cbd6cf;color:#52645b}
+#btnTheme{border-color:#cbd6cf;color:#52645b;min-width:118px;justify-content:center}
 #btnTheme:hover{border-color:#397653;color:#245b43;background:#f4f8f5}
+#btnTheme #themeIcon{font-size:15px;line-height:1}
 body.theme-dark{
   --navy:#202825;--navy2:#252e29;--navy3:#303a34;
   --gold:#8bb99a;--gold2:#a5c9af;--golddim:rgba(139,185,154,.12);
@@ -465,6 +466,11 @@ body.theme-dark .gchrono-time,body.theme-dark .gchrono-total-value{color:#a5c9af
 body.theme-dark .hentry-meta,body.theme-dark .sub,body.theme-dark .rl,body.theme-dark .hentry-meta{color:#b0beb5}
 body.theme-dark .vig-highlight{background:#ffe66b!important;color:#24200d!important}
 body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564c}
+body.theme-dark .kpi,body.theme-dark .tscard,body.theme-dark .tsdrill,body.theme-dark .drq{
+  background:linear-gradient(145deg,#303a34,#252e29)!important;border-color:#46564c;color:var(--text);box-shadow:0 8px 20px rgba(0,0,0,.16)
+}
+body.theme-dark .drt,body.theme-dark .tsname{color:var(--text)}
+body.theme-dark .ov{background:rgba(25,32,28,.97)}
 
 
 /* ── Mode examen : vignette large, panneaux à défilement indépendant, plein écran ── */
@@ -566,6 +572,10 @@ body.theme-dark #driveToast{background:#2b3530;color:#e7eee9;border-color:#46564
 </div>
 <div class="drive-bar">
   <span class="gchrono-mini" id="gchronoMini"><span class="dot"></span><span id="gchronoMiniTxt">00:00:00</span></span>
+  <button class="btn-drive" id="btnTheme" type="button" onclick="toggleTheme()" aria-label="Passer au mode sombre doux" title="Basculer entre le mode clair et le mode sombre">
+    <span id="themeIcon" aria-hidden="true">☾</span>
+    <span id="themeBtnLabel">Mode sombre</span>
+  </button>
   <button class="btn-drive" id="btnDriveLoad" type="button" onclick="driveLoadAction()">
     <div class="drive-dot" id="driveLoadDot"></div>
     <span id="driveLoadLabel">↓ Charger</span>
