@@ -6150,5 +6150,460 @@ renderLibrary();
 renderResumeBanner();
 gStudyChrono.init();
 </script>
+<!-- ═══════════════════════════════════════════════════════════════════
+     MODULE AJOUTÉ : EXPORT PDF DES STATISTIQUES
+     Indépendant du reste du hub (lecture seule des données).
+     Pour le retirer : supprimer ce bloc, de ce commentaire jusqu'à la
+     ligne "FIN DU MODULE EXPORT PDF".
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="rptStyle">
+@page{size:A4 portrait;margin:14mm 12mm 16mm 12mm;
+  @bottom-left{content:"CFA Level II · Quiz Trainer — Statistiques";font:8pt 'DM Sans',Arial,sans-serif;color:#65746d}
+  @bottom-right{content:"Page " counter(page) " / " counter(pages);font:8pt 'DM Sans',Arial,sans-serif;color:#65746d}
+}
+#rptRoot{display:none}
+.rpt-trigger{display:inline-flex;align-items:center;gap:6px;margin:4px 0 10px}
+
+/* ── Fenêtre de choix ── */
+#rptModal{position:fixed;inset:0;z-index:3000;background:rgba(20,30,25,.55);display:none;align-items:center;justify-content:center;padding:16px}
+#rptModal.on{display:flex}
+.rpt-box{background:var(--card,#fff);color:var(--text,#263a35);border:1px solid var(--border,#ccd5d0);border-radius:14px;padding:22px 24px;width:min(580px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);font-family:'DM Sans',sans-serif}
+.rpt-box h3{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:4px}
+.rpt-lead{font-size:12px;color:var(--dim,#65746d);margin-bottom:14px;line-height:1.5}
+.rpt-grp{border:1px solid var(--border,#ccd5d0);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.rpt-gt{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--dim,#65746d);margin-bottom:8px}
+.rpt-chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;line-height:1.35;padding:3px 0}
+.rpt-chk input{margin-top:3px;accent-color:#245b43;flex-shrink:0}
+.rpt-chk small{display:block;color:var(--dim,#65746d);font-size:11px}
+.rpt-mocklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 12px;margin:6px 0 4px 2px}
+.rpt-links{font-size:11px;margin:2px 0 0 2px}
+.rpt-links a{color:var(--gold,#245b43);cursor:pointer;text-decoration:underline;margin-right:12px}
+.rpt-row{display:flex;gap:12px;flex-wrap:wrap}
+.rpt-row label{flex:1;min-width:200px;font-size:12px;color:var(--dim,#65746d)}
+.rpt-row select,.rpt-sel{display:block;width:100%;margin-top:4px;padding:8px 10px;border-radius:7px;border:1px solid var(--border,#ccd5d0);background:var(--choice-bg,#fff);color:var(--choice-text,#263a35);font:13px 'DM Sans',sans-serif}
+#rptMsg{font-size:12px;color:#b93838;min-height:16px;margin-bottom:8px}
+.rpt-act{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Aperçu A4 à l'écran ── */
+body.rpt-on{overflow:hidden}
+body.rpt-on::before{display:none}
+body.rpt-on #rptRoot{display:block;position:fixed;inset:0;z-index:2500;overflow:auto;background:#6b7570}
+.rpt-bar{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#1f2a25;color:#e7eee9;padding:10px 16px;font:500 13px 'DM Sans',Arial,sans-serif}
+.rpt-bar span{opacity:.8;font-size:12px}
+.rpt-bar button{border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;border-radius:7px;padding:8px 14px;font:600 13px 'DM Sans',Arial,sans-serif;cursor:pointer}
+.rpt-bar button.p{background:#397653;border-color:#397653}
+.rpt-sheet{width:210mm;max-width:100%;margin:18px auto 40px;background:#fff;color:#1f2a25;padding:14mm 12mm;box-shadow:0 10px 40px rgba(0,0,0,.35);font:400 10pt/1.4 'DM Sans',Arial,sans-serif;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rpt-sheet *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+/* ── Contenu du rapport ── */
+.rpt-top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #245b43;padding-bottom:8pt;margin-bottom:6pt}
+.rpt-h1{font:900 20pt/1.1 'Playfair Display',Georgia,serif;color:#245b43}
+.rpt-badge{font:500 8pt 'DM Mono',monospace;letter-spacing:2px;color:#245b43;border:1px solid #245b43;padding:2pt 8pt;border-radius:2px;white-space:nowrap}
+.rpt-meta{font-size:8.5pt;color:#65746d;margin-bottom:8pt;line-height:1.5}
+.rpt-h2{font:700 12.5pt 'DM Sans',Arial,sans-serif;color:#245b43;border-bottom:1.5px solid #245b43;padding-bottom:2pt;margin:14pt 0 6pt;break-after:avoid;page-break-after:avoid}
+.rpt-h3{font:700 10pt 'DM Sans',Arial,sans-serif;color:#1f2a25;margin:10pt 0 4pt;break-after:avoid;page-break-after:avoid}
+.rpt-brk{break-before:page;page-break-before:always}
+.rpt-mockhead{display:flex;justify-content:space-between;align-items:center;background:#245b43;color:#fff;border-radius:6px;padding:8pt 12pt;margin-bottom:8pt;break-after:avoid}
+.rpt-mockhead b{font:900 16pt 'Playfair Display',Georgia,serif}
+.rpt-mockhead span{font:500 8.5pt 'DM Mono',monospace;opacity:.9}
+.rpt-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6pt;margin:4pt 0 6pt;break-inside:avoid}
+.rpt-kpi{border:1px solid #d7dfdb;border-radius:6px;padding:6pt 8pt;background:#f6f8f7}
+.rpt-kpi .l{font:500 6.5pt 'DM Mono',monospace;letter-spacing:1.2px;color:#65746d;text-transform:uppercase}
+.rpt-kpi .v{font:700 17pt/1.15 'DM Sans',Arial,sans-serif}
+.rpt-kpi .s{font-size:7.5pt;color:#65746d}
+.rpt-tbl{width:100%;border-collapse:collapse;font-size:8.8pt;margin:2pt 0 4pt}
+.rpt-tbl thead{display:table-header-group}
+.rpt-tbl tr{break-inside:avoid;page-break-inside:avoid}
+.rpt-tbl th{background:#eef3f0;color:#2f4a3d;text-align:left;font-weight:700;padding:4pt 6pt;border-bottom:1.5px solid #c5cfca;font-size:8pt}
+.rpt-tbl td{padding:4pt 6pt;border-bottom:1px solid #e3e9e6;vertical-align:middle}
+.rpt-tbl td.c,.rpt-tbl th.c{text-align:center}
+.rpt-tbl td small{color:#65746d;font-size:7.5pt;display:block}
+.rpt-dim{color:#8a9890}
+.rpt-barw{position:relative;height:7pt;background:#e6ece9;border-radius:4px;min-width:60pt}
+.rpt-barf{height:100%;border-radius:4px}
+.rpt-barm{position:absolute;top:-2pt;bottom:-2pt;width:1.5px;background:#263a35;opacity:.55}
+.rpt-pill{display:inline-block;font-size:7.5pt;font-weight:700;padding:1pt 6pt;border:1px solid;border-radius:10px;white-space:nowrap}
+.rpt-alert{border:1px solid #e6c9a3;background:#fdf6ec;border-left:3px solid #b86a18;border-radius:5px;padding:6pt 9pt;font-size:9pt;margin:6pt 0;break-inside:avoid}
+.rpt-alert.ok{border-color:#b9dcc4;background:#eff8f1;border-left-color:#238443}
+.rpt-chart{break-inside:avoid;margin:4pt 0}
+.rpt-hm{border-collapse:separate;border-spacing:2pt;font-size:8.5pt;width:100%;break-inside:avoid}
+.rpt-hm th{font:600 7.5pt 'DM Mono',monospace;color:#65746d;padding:1pt 2pt}
+.rpt-hm td.t{font-weight:600;white-space:nowrap;padding-right:6pt}
+.rpt-hm td.h{text-align:center;color:#fff;font-weight:700;border-radius:3px;padding:4pt 0}
+.rpt-hm td.e{text-align:center;color:#8a9890;background:#eef2f0;border-radius:3px}
+.rpt-note{font-size:7.8pt;color:#65746d;margin-top:8pt;line-height:1.45}
+.rpt-grphead{display:flex;justify-content:space-between;align-items:center;background:#eef3f0;border-left:3px solid #245b43;padding:4pt 8pt;margin:9pt 0 3pt;font-weight:700;font-size:9.5pt;break-after:avoid}
+.rpt-grphead small{font-weight:500;color:#65746d;font-size:8pt}
+.rpt-q{border:1px solid #dfe6e2;border-left:3px solid #b93838;border-radius:5px;padding:5pt 8pt;margin:4pt 0;break-inside:avoid;page-break-inside:avoid;background:#fff}
+.rpt-q.ok{border-left-color:#238443}
+.rpt-q .m{font:500 7pt 'DM Mono',monospace;color:#65746d;margin-bottom:2pt}
+.rpt-q .t{font-size:9pt;line-height:1.4;white-space:pre-wrap}
+.rpt-q .a{display:flex;gap:4pt 14pt;flex-wrap:wrap;margin-top:3pt;font-size:8.5pt}
+.rpt-q .bad{color:#b93838}.rpt-q .good{color:#238443}
+.rpt-q .x{margin-top:3pt;padding-top:3pt;border-top:1px dashed #d7dfdb;font-size:8pt;color:#51635a;line-height:1.4;white-space:pre-wrap}
+
+@media print{
+  html,body{height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important}
+  body.rpt-on > *:not(#rptRoot){display:none!important}
+  body.rpt-on #rptRoot{position:static!important;display:block!important;overflow:visible!important;background:#fff!important;inset:auto!important}
+  .rpt-bar{display:none!important}
+  .rpt-sheet{width:auto!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important}
+}
+</style>
+
+<script id="rptScript">
+(function(){
+'use strict';
+try{
+/* ───────── Utilitaires ───────── */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const plain=s=>{
+  if(s==null) return '';
+  let t=String(s).replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li|tr)>/gi,'\n');
+  try{ t=new DOMParser().parseFromString(t,'text/html').body.textContent||''; }catch(e){ t=t.replace(/<[^>]+>/g,''); }
+  return t.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+};
+const TGT=()=>(typeof TOPIC_TARGET!=='undefined'?TOPIC_TARGET:70);
+const col=p=>p<TGT()?'#b93838':p<80?'#b86a18':'#238443';
+const heat=p=>'hsl('+Math.max(0,Math.min(120,(p-40)*2))+',58%,46%)';
+const pct=(c,n)=>n?Math.round(c/n*100):0;
+const fdate=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});};
+const fdt=iso=>{const d=new Date(iso);return isNaN(d)?'':fdate(iso)+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
+const fdur=s=>{s=Math.round(+s||0);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),r=s%60;return h?h+' h '+String(m).padStart(2,'0')+' min':m+' min '+String(r).padStart(2,'0')+' s';};
+const mname=k=>(typeof mocks!=='undefined'&&mocks[k]&&mocks[k].name)||k;
+const short=t=>(typeof TOPIC_SHORT!=='undefined'&&TOPIC_SHORT[t])||t;
+const tlabel=t=>t==='Other'?'Autre (non classé)':t;
+const T_ORDER=()=>(typeof TOPIC_ORDER!=='undefined'?TOPIC_ORDER:[]);
+const asc=(a,b)=>new Date(a.date)-new Date(b.date);
+const isFull=e=>{ try{ return typeof expectedQuestions==='function'&&mocks[e.mockId]?e.questions===expectedQuestions(e.mockId,e.sess):true; }catch(x){ return true; } };
+const hasDetail=e=>e&&e.detail&&e.detail.length;
+const PART_LBL={all:'Toutes les parties',s1:'Partie 1',s2:'Partie 2'};
+const MODE_LBL={all:'Toutes les tentatives',last:'Dernière tentative de chaque question'};
+
+function topicRows(stats){
+  const ord=T_ORDER().slice();
+  Object.keys(stats).forEach(t=>{ if(ord.indexOf(t)<0) ord.push(t); });
+  return ord.filter(t=>stats[t]&&stats[t].n>0).map(t=>({t,n:stats[t].n,c:stats[t].c,p:pct(stats[t].c,stats[t].n)}));
+}
+function ansText(it,l){
+  if(!l) return '— (sans réponse)';
+  const i='ABCDEFG'.indexOf(l);
+  const raw=(i>=0&&it.c&&it.c[i]!=null)?plain(it.c[i]).replace(/^[A-G][\.\)]\s*/,''):'';
+  return l+(raw?') '+raw:'');
+}
+
+/* ───────── Graphiques SVG ───────── */
+function radarSVG(stats){
+  const T=T_ORDER(), N=T.length; if(!N) return '';
+  const W=520,H=420,cx=W/2,cy=H/2+4,R=140;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  const pt=(i,p)=>[cx+Math.cos(ang(i))*R*p/100, cy+Math.sin(ang(i))*R*p/100];
+  const val=t=>{const x=stats[t];return x&&x.n?pct(x.c,x.n):null;};
+  const ring=r=>T.map((_,i)=>pt(i,r).map(v=>v.toFixed(1)).join(',')).join(' ');
+  let g='';
+  [25,50,75,100].forEach(r=>{ g+='<polygon points="'+ring(r)+'" fill="'+(r===100?'#f6f8f7':'none')+'" stroke="#c5cfca" stroke-width="1"/>'; });
+  T.forEach((_,i)=>{ const p=pt(i,100); g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0].toFixed(1)+'" y2="'+p[1].toFixed(1)+'" stroke="#c5cfca" stroke-width="1"/>'; });
+  g+='<polygon points="'+ring(TGT())+'" fill="none" stroke="#b86a18" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  g+='<text x="'+(cx+4)+'" y="'+(cy-R*TGT()/100-4)+'" font-size="10" fill="#b86a18" font-family="DM Mono,monospace">objectif '+TGT()+'%</text>';
+  const poly=T.map((t,i)=>pt(i,val(t)==null?0:val(t)).map(v=>v.toFixed(1)).join(',')).join(' ');
+  g+='<polygon points="'+poly+'" fill="rgba(36,91,67,.28)" stroke="#245b43" stroke-width="2.2" stroke-linejoin="round"/>';
+  T.forEach((t,i)=>{
+    const v=val(t), p=pt(i,v==null?0:v), c=v==null?'#9aa8a1':col(v);
+    g+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="5" fill="'+(v==null?'#fff':c)+'" stroke="#fff" stroke-width="1.5"/>';
+    const lp=pt(i,116), ca=Math.cos(ang(i)), anchor=Math.abs(ca)<0.25?'middle':(ca>0?'start':'end');
+    g+='<text x="'+lp[0].toFixed(1)+'" y="'+(lp[1]+4).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="600" fill="#263a35" font-family="DM Sans,Arial,sans-serif">'+esc(short(t))+(v==null?'':' <tspan fill="'+col(v)+'" font-weight="700">'+v+'%</tspan>')+'</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:125mm;display:block;margin:0 auto" role="img" aria-label="Radar de réussite par sujet">'+g+'</svg>';
+}
+function lineSVG(pts){
+  if(!pts.length) return '';
+  const W=720,H=210,L=34,Rr=12,Tp=12,B=26, iw=W-L-Rr, ih=H-Tp-B;
+  const x=i=>L+(pts.length<2?iw/2:i*iw/(pts.length-1)), y=p=>Tp+ih*(1-p/100);
+  let g='';
+  [0,25,50,75,100].forEach(v=>{ g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="#e3e9e6"/><text x="'+(L-5)+'" y="'+(y(v)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="#65746d" font-family="DM Mono,monospace">'+v+'</text>'; });
+  g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y(TGT()).toFixed(1)+'" y2="'+y(TGT()).toFixed(1)+'" stroke="#b86a18" stroke-width="1.3" stroke-dasharray="5 4"/>';
+  g+='<text x="'+(W-Rr-2)+'" y="'+(y(TGT())-4).toFixed(1)+'" text-anchor="end" font-size="9" fill="#b86a18" font-family="DM Mono,monospace">objectif '+TGT()+'%</text>';
+  if(pts.length>1) g+='<polyline points="'+pts.map((q,i)=>x(i).toFixed(1)+','+y(q.p).toFixed(1)).join(' ')+'" fill="none" stroke="#245b43" stroke-width="2" stroke-linejoin="round"/>';
+  pts.forEach((q,i)=>{
+    g+='<circle cx="'+x(i).toFixed(1)+'" cy="'+y(q.p).toFixed(1)+'" r="4" fill="'+col(q.p)+'" stroke="#fff" stroke-width="1.3"/>';
+    if(pts.length<=20) g+='<text x="'+x(i).toFixed(1)+'" y="'+(y(q.p)-8).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="700" fill="'+col(q.p)+'" font-family="DM Sans,Arial,sans-serif">'+q.p+'</text>';
+  });
+  const nl=Math.min(pts.length,6), idx=[];
+  for(let k=0;k<nl;k++){ const i=nl===1?0:Math.round(k*(pts.length-1)/(nl-1)); if(idx.indexOf(i)<0) idx.push(i); }
+  idx.forEach(i=>{ g+='<text x="'+x(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="#65746d" font-family="DM Mono,monospace">'+esc(pts[i].d)+'</text>'; });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Progression des scores">'+g+'</svg>';
+}
+
+/* ───────── Blocs HTML ───────── */
+function kpi(l,v,s,color){ return '<div class="rpt-kpi"><div class="l">'+l+'</div><div class="v" style="color:'+(color||'#1f2a25')+'">'+v+'</div><div class="s">'+s+'</div></div>'; }
+function topicTable(rows){
+  if(!rows.length) return '<p class="rpt-dim" style="font-size:9pt">Aucune donnée par sujet avec ces filtres.</p>';
+  let h='<table class="rpt-tbl"><thead><tr><th>Sujet</th><th class="c">Correctes</th><th class="c">%</th><th style="width:34%">Progression (repère = objectif '+TGT()+'%)</th><th class="c">Statut</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    const c=col(r.p), st=r.p<TGT()?'⚠ Sous '+TGT()+'%':r.p<80?'Limite':'OK';
+    h+='<tr><td><b>'+esc(tlabel(r.t))+'</b>'+(r.n<8?'<small>peu de données</small>':'')+'</td><td class="c">'+r.c+' / '+r.n+'</td><td class="c"><b style="color:'+c+'">'+r.p+'%</b></td>'
+      +'<td><div class="rpt-barw"><div class="rpt-barf" style="width:'+r.p+'%;background:'+c+'"></div><div class="rpt-barm" style="left:'+TGT()+'%"></div></div></td>'
+      +'<td class="c"><span class="rpt-pill" style="color:'+c+';border-color:'+c+'">'+st+'</span></td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function alertBox(rows){
+  const low=rows.filter(r=>r.p<TGT()).sort((a,b)=>a.p-b.p);
+  if(low.length) return '<div class="rpt-alert">⚠ <b>'+low.length+' sujet(s) sous '+TGT()+'%</b> — à renforcer en priorité : '+low.map(r=>esc(tlabel(r.t))+' ('+r.p+'%)').join(', ')+'.</div>';
+  return rows.length?'<div class="rpt-alert ok">✅ Tous les sujets travaillés sont à '+TGT()+'% ou plus.</div>':'';
+}
+function partCell(a){
+  if(!a||!a.length) return '<span class="rpt-dim">—</span>';
+  const last=a[a.length-1].p, best=Math.max(...a.map(x=>x.p)), avg=Math.round(a.reduce((t,x)=>t+x.p,0)/a.length);
+  return '<b style="color:'+col(last)+'">'+last+'%</b><small>moy. '+avg+'% · max '+best+'% · '+a.length+' essai'+(a.length>1?'s':'')+'</small>';
+}
+function partsTable(ps,ids){
+  ids=ids.filter(k=>ps[k]&&(ps[k].s1.length||ps[k].s2.length));
+  if(!ids.length) return '<p class="rpt-dim" style="font-size:9pt">Aucune session complète enregistrée pour le calcul par partie.</p>';
+  let h='<table class="rpt-tbl"><thead><tr><th>Mock</th><th>Partie 1 (dernier résultat)</th><th>Partie 2 (dernier résultat)</th><th class="c">Écart P2 − P1</th></tr></thead><tbody>';
+  ids.forEach(k=>{
+    const a1=ps[k].s1,a2=ps[k].s2; let gap='<span class="rpt-dim">—</span>';
+    if(a1.length&&a2.length){ const d=a2[a2.length-1].p-a1[a1.length-1].p; gap='<b style="color:'+(d<0?'#b93838':d>0?'#238443':'#65746d')+'">'+(d>0?'+':'')+d+' pt</b>'; }
+    h+='<tr><td><b>'+esc(mname(k))+'</b></td><td>'+partCell(a1)+'</td><td>'+partCell(a2)+'</td><td class="c">'+gap+'</td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function qCard(e,it,idx,o,showMeta,forceOk){
+  const ok=it.u===it.a;
+  const topic=(typeof topicOfDetail==='function')?topicOfDetail(e,it):(it.t||'');
+  const pt=(typeof partOfItem==='function')?partOfItem(e,it):null;
+  const meta=[ idx!=null?('Q'+String(idx+1).padStart(2,'0')):null, showMeta?mname(e.mockId):null, pt?'Partie '+pt.slice(1):null, it.vigTitle||null, topic&&topic!=='Other'?topic:null, showMeta?fdate(e.date):null, it.m?'🔖 marquée':null ].filter(Boolean).join(' · ');
+  let h='<div class="rpt-q'+(ok?' ok':'')+'"><div class="m">'+(ok?'✓ ':'✗ ')+esc(meta)+'</div><div class="t">'+esc(plain(it.q))+'</div><div class="a">';
+  if(!ok) h+='<span class="bad">Ta réponse : '+esc(ansText(it,it.u))+'</span>';
+  h+='<span class="good">Bonne réponse : '+esc(ansText(it,it.a))+'</span></div>';
+  if(!ok&&o.expl&&typeof it.e==='string'&&it.e.trim()) h+='<div class="x">📖 '+esc(plain(it.e))+'</div>';
+  return h+'</div>';
+}
+
+/* ───────── Rapport général ───────── */
+function buildGeneral(o,hist){
+  const withD=hist.filter(hasDetail);
+  const stats=computeTopicStats(withD,o.mode,{},o.part);
+  const rows=topicRows(stats);
+  const tot=rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
+  const gp=pct(tot.c,tot.n);
+  const okN=rows.filter(x=>x.p>=TGT()).length;
+  const pool=rows.filter(x=>x.n>=4), weak=(pool.length?pool:rows).slice().sort((a,b)=>a.p-b.p)[0];
+  const totalTime=hist.reduce((t,e)=>t+(+e.elapsed||0),0);
+  let h='<div class="rpt-h2" style="margin-top:6pt">1. Synthèse générale — tous les mocks</div>';
+  if(!rows.length){
+    return h+'<p class="rpt-dim">Aucune session avec détail par question n’est enregistrée : la synthèse par sujet sera disponible après un mock terminé.</p>';
+  }
+  h+='<div class="rpt-kpis">'
+    +kpi('Réussite globale',gp+'%',tot.c+' bonnes / '+tot.n+' réponses',col(gp))
+    +kpi('Sujets ≥ '+TGT()+'%',okN+' / '+rows.length,(rows.length-okN)?(rows.length-okN)+' à renforcer':'objectif atteint',okN===rows.length?'#238443':'#b86a18')
+    +kpi('Sujet le plus faible','<span style="font-size:11pt">'+esc(tlabel(weak.t))+'</span>',weak.p+'% · '+weak.c+' / '+weak.n,col(weak.p))
+    +kpi('Sessions · temps',withD.length+' · '+esc(fdur(totalTime)),'sessions avec détail · temps cumulé','#245b43')
+    +'</div>';
+  h+=alertBox(rows);
+
+  h+='<div class="rpt-h2">2. Réussite par sujet</div><div class="rpt-chart">'+radarSVG(stats)+'</div>'+topicTable(rows);
+
+  const full=hist.filter(e=>e.mockId&&mocks[e.mockId]&&isFull(e)).sort(asc);
+  h+='<div class="rpt-h2">3. Progression des scores</div>';
+  if(full.length){
+    h+='<div class="rpt-chart">'+lineSVG(full.map(e=>({p:e.pct,d:fdate(e.date).slice(0,5)})))+'</div>';
+    const ids=Object.keys(mocks).filter(k=>full.some(e=>e.mockId===k));
+    h+='<table class="rpt-tbl"><thead><tr><th>Mock</th><th class="c">Sessions complètes</th><th class="c">Moyenne</th><th class="c">Meilleur</th><th class="c">Dernier</th><th class="c">Temps cumulé</th></tr></thead><tbody>';
+    ids.forEach(k=>{
+      const a=full.filter(e=>e.mockId===k), all=hist.filter(e=>e.mockId===k);
+      const avg=Math.round(a.reduce((t,e)=>t+e.pct,0)/a.length), best=Math.max(...a.map(e=>e.pct)), last=a[a.length-1].pct;
+      h+='<tr><td><b>'+esc(mname(k))+'</b></td><td class="c">'+a.length+'</td><td class="c"><b style="color:'+col(avg)+'">'+avg+'%</b></td><td class="c">'+best+'%</td><td class="c"><b style="color:'+col(last)+'">'+last+'%</b></td><td class="c">'+esc(fdur(all.reduce((t,e)=>t+(+e.elapsed||0),0)))+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  } else h+='<p class="rpt-dim" style="font-size:9pt">Aucune session complète enregistrée.</p>';
+
+  h+='<div class="rpt-h2">4. Résultats par mock et par partie</div>';
+  let ps={}; try{ ps=computePartStats(hist); }catch(e){}
+  h+=partsTable(ps,Object.keys(mocks));
+
+  const hmIds=Object.keys(mocks).filter(k=>withD.some(e=>e.mockId===k));
+  if(hmIds.length){
+    const per={}; hmIds.forEach(k=>{ per[k]=computeTopicStats(withD.filter(e=>e.mockId===k),o.mode,{},o.part); });
+    h+='<div class="rpt-h2">5. Carte de chaleur sujet × mock</div><table class="rpt-hm"><thead><tr><th></th>'+hmIds.map(k=>'<th>'+esc(mname(k).replace(/^Mock\s*/i,'M'))+'</th>').join('')+'</tr></thead><tbody>';
+    T_ORDER().forEach(t=>{
+      h+='<tr><td class="t">'+esc(short(t))+'</td>';
+      hmIds.forEach(k=>{ const x=per[k][t]; if(!x||!x.n){ h+='<td class="e">·</td>'; return; } const p=pct(x.c,x.n); h+='<td class="h" style="background:'+heat(p)+'">'+p+'</td>'; });
+      h+='</tr>';
+    });
+    h+='</tbody></table><div class="rpt-note">Pourcentage de réussite par sujet et par mock · « · » = pas de données.</div>';
+  }
+  return h;
+}
+
+/* ───────── Rapport par mock ───────── */
+function buildMock(k,o,hist,brk){
+  const sess=hist.filter(e=>e.mockId===k).sort(asc);
+  const withD=sess.filter(hasDetail);
+  const full=sess.filter(isFull);
+  let h='<div class="'+(brk?'rpt-brk':'')+'"><div class="rpt-mockhead"><b>'+esc(mname(k))+'</b><span>'+sess.length+' session'+(sess.length>1?'s':'')+' enregistrée'+(sess.length>1?'s':'')+'</span></div>';
+  if(!sess.length) return h+'<p class="rpt-dim">Aucune session enregistrée pour ce mock.</p></div>';
+
+  const avg=full.length?Math.round(full.reduce((t,e)=>t+e.pct,0)/full.length):null;
+  const best=full.length?Math.max(...full.map(e=>e.pct)):null;
+  const lastF=full.length?full[full.length-1].pct:null;
+  const stats=computeTopicStats(withD,o.mode,{},o.part);
+  const rows=topicRows(stats);
+  const tot=rows.reduce((a,x)=>({n:a.n+x.n,c:a.c+x.c}),{n:0,c:0});
+  h+='<div class="rpt-kpis">'
+    +kpi('Dernier score',lastF==null?'—':lastF+'%',full.length?'session complète la plus récente':'aucune session complète',lastF==null?'#65746d':col(lastF))
+    +kpi('Meilleur · moyenne',best==null?'—':best+'% · '+avg+'%',full.length+' session'+(full.length>1?'s':'')+' complète'+(full.length>1?'s':''),'#245b43')
+    +kpi('Réussite cumulée',tot.n?pct(tot.c,tot.n)+'%':'—',tot.n?tot.c+' / '+tot.n+' réponses':'pas de détail',tot.n?col(pct(tot.c,tot.n)):'#65746d')
+    +kpi('Temps passé',esc(fdur(sess.reduce((t,e)=>t+(+e.elapsed||0),0))),'toutes sessions','#245b43')
+    +'</div>';
+
+  h+='<div class="rpt-h3">Sessions passées</div><table class="rpt-tbl"><thead><tr><th>Date</th><th>Session</th><th class="c">Score</th><th class="c">Correctes / Questions</th><th class="c">Erreurs</th><th class="c">Temps</th><th>Type</th></tr></thead><tbody>';
+  sess.forEach(e=>{
+    h+='<tr><td>'+esc(fdt(e.date))+'</td><td>'+esc(e.sessLabel||e.sess||'')+'</td><td class="c"><b style="color:'+col(e.pct)+'">'+e.pct+'%</b></td><td class="c">'+e.correct+' / '+e.questions+'</td><td class="c">'+(e.questions-e.correct)+'</td><td class="c">'+esc(fdur(e.elapsed))+'</td><td>'+(isFull(e)?'Complète':'<span class="rpt-dim">Partielle / erreurs refaites</span>')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  if(full.length>1) h+='<div class="rpt-h3">Évolution du score</div><div class="rpt-chart">'+lineSVG(full.map(e=>({p:e.pct,d:fdate(e.date).slice(0,5)})))+'</div>';
+
+  let ps={}; try{ ps=computePartStats(hist); }catch(e){}
+  h+='<div class="rpt-h3">Par partie</div>'+partsTable(ps,[k]);
+
+  h+='<div class="rpt-h3">Réussite par sujet'+(o.part!=='all'?' — '+PART_LBL[o.part]:'')+'</div>'+alertBox(rows)+topicTable(rows);
+
+  if(o.detail==='wrong'&&withD.length){
+    const last={};
+    withD.forEach(e=>(e.detail||[]).forEach(it=>{
+      if(o.part!=='all'&&partOfItem(e,it)!==o.part) return;
+      last[it.q]={e,it,ok:it.u===it.a};
+    }));
+    const all=Object.values(last), wrong=all.filter(x=>!x.ok);
+    h+='<div class="rpt-h2">Questions encore ratées (dernière tentative de chaque question)</div>';
+    h+='<p style="font-size:9pt;margin-bottom:4pt"><b>'+wrong.length+'</b> question'+(wrong.length>1?'s':'')+' ratée'+(wrong.length>1?'s':'')+' sur '+all.length+' question'+(all.length>1?'s':'')+' vue'+(all.length>1?'s':'')+'.</p>';
+    if(!wrong.length) h+='<div class="rpt-alert ok">✅ Aucune question ratée à la dernière tentative.</div>';
+    const groups={};
+    wrong.forEach(x=>{ const t=topicOfDetail(x.e,x.it)||'Other'; (groups[t]=groups[t]||[]).push(x); });
+    const ord=T_ORDER().slice(); Object.keys(groups).forEach(t=>{ if(ord.indexOf(t)<0) ord.push(t); });
+    ord.filter(t=>groups[t]).forEach(t=>{
+      h+='<div class="rpt-grphead"><span>'+esc(tlabel(t))+'</span><small>'+groups[t].length+' erreur'+(groups[t].length>1?'s':'')+'</small></div>';
+      groups[t].forEach(x=>{ h+=qCard(x.e,x.it,null,o,true); });
+    });
+  }
+  if(o.detail==='full'&&withD.length){
+    h+='<div class="rpt-h2">Revue détaillée de chaque session</div>';
+    withD.slice().reverse().forEach(e=>{
+      const items=(e.detail||[]).map((it,i)=>({it,i})).filter(x=>o.part==='all'||partOfItem(e,x.it)===o.part);
+      if(!items.length) return;
+      h+='<div class="rpt-grphead"><span>'+esc(fdt(e.date))+' · '+esc(e.sessLabel||'')+'</span><small>'+e.pct+'% · '+e.correct+' / '+e.questions+' correctes · '+esc(fdur(e.elapsed))+'</small></div>';
+      items.forEach(x=>{ h+=qCard(e,x.it,x.i,o,false); });
+    });
+  }
+  return h+'</div>';
+}
+
+/* ───────── Assemblage ───────── */
+function buildReport(o){
+  const hist=getHistory();
+  const today=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const scope=[];
+  if(o.general) scope.push('rapport général');
+  if(o.mocks.length) scope.push(o.mocks.length+' mock'+(o.mocks.length>1?'s':'')+' : '+o.mocks.map(mname).join(', '));
+  let h='<div class="rpt-sheet"><div class="rpt-top"><div class="rpt-h1">Statistiques d’entraînement</div><div class="rpt-badge">CFA LEVEL II · QUIZ TRAINER</div></div>'
+    +'<div class="rpt-meta">Généré le '+esc(today)+' · Contenu : '+esc(scope.join(' + '))+'<br>Filtres : '+esc(PART_LBL[o.part])+' · '+esc(MODE_LBL[o.mode])+' · objectif par sujet : '+TGT()+'%</div>';
+  if(o.general) h+=buildGeneral(o,hist);
+  o.mocks.forEach((k,i)=>{ h+=buildMock(k,o,hist,o.general||i>0); });
+  h+='<div class="rpt-note">Scores et moyennes : sessions complètes uniquement (les sessions « refaire les erreurs » ou partielles sont listées mais exclues des moyennes). Sujets : classés par vignette (Mocks 1 à 5 d’après les PDF, Mocks 6 à 8 d’après le contenu).</div></div>';
+  return h;
+}
+
+/* ───────── Interface ───────── */
+function ensureModal(){
+  if($('rptModal')) return;
+  const m=document.createElement('div'); m.id='rptModal';
+  m.innerHTML='<div class="rpt-box" role="dialog" aria-modal="true" aria-label="Exporter les statistiques en PDF">'
+    +'<h3>📄 Exporter les statistiques en PDF</h3>'
+    +'<p class="rpt-lead">Choisis le contenu. Un aperçu au format A4 s’ouvre, puis tu l’enregistres en PDF. Tu peux cocher le rapport général et plusieurs mocks pour tout avoir dans le même document.</p>'
+    +'<div class="rpt-grp"><div class="rpt-gt">CONTENU</div>'
+    +'<label class="rpt-chk"><input type="checkbox" id="rptGen"><span><b>Rapport général — tous les mocks</b><small>Synthèse, radar par sujet, progression, parties, carte de chaleur</small></span></label>'
+    +'<div class="rpt-gt" style="margin-top:10px">RAPPORT PAR MOCK PASSÉ</div><div class="rpt-mocklist" id="rptMockList"></div>'
+    +'<div class="rpt-links"><a id="rptAll">Tout cocher</a><a id="rptNone">Aucun</a></div></div>'
+    +'<div class="rpt-grp"><div class="rpt-gt">FILTRES</div><div class="rpt-row">'
+    +'<label>Partie<select id="rptPart"><option value="all">Toutes les parties</option><option value="s1">Partie 1</option><option value="s2">Partie 2</option></select></label>'
+    +'<label>Tentatives<select id="rptMode"><option value="all">Toutes les tentatives</option><option value="last">Dernière tentative de chaque question</option></select></label></div></div>'
+    +'<div class="rpt-grp"><div class="rpt-gt">DÉTAIL DES QUESTIONS (rapports par mock)</div>'
+    +'<select class="rpt-sel" id="rptDetail"><option value="wrong">Erreurs : questions encore ratées, groupées par sujet</option><option value="full">Revue complète de chaque session (erreurs + bonnes réponses)</option><option value="none">Aucun détail (résumé chiffré seulement)</option></select>'
+    +'<label class="rpt-chk" style="margin-top:8px"><input type="checkbox" id="rptExpl" checked><span>Inclure l’explication des questions ratées</span></label></div>'
+    +'<div id="rptMsg"></div>'
+    +'<div class="rpt-act"><button class="btn btn-o" id="rptCancel" type="button">Annuler</button><button class="btn btn-g" id="rptGo" type="button">Générer l’aperçu A4</button></div></div>';
+  document.body.appendChild(m);
+  m.addEventListener('click',ev=>{ if(ev.target===m) closeModal(); });
+  $('rptCancel').onclick=closeModal;
+  $('rptAll').onclick=()=>m.querySelectorAll('.rptMk').forEach(c=>c.checked=true);
+  $('rptNone').onclick=()=>m.querySelectorAll('.rptMk').forEach(c=>c.checked=false);
+  $('rptGo').onclick=generate;
+}
+function closeModal(){ const m=$('rptModal'); if(m) m.classList.remove('on'); }
+function openModal(preMock){
+  ensureModal();
+  const hist=getHistory();
+  const list=$('rptMockList'), msg=$('rptMsg'); msg.textContent='';
+  const ids=Object.keys(mocks).filter(k=>hist.some(e=>e.mockId===k));
+  list.innerHTML=ids.length?ids.map(k=>'<label class="rpt-chk"><input type="checkbox" class="rptMk" value="'+esc(k)+'"'+(k===preMock?' checked':'')+'><span>'+esc(mname(k))+'</span></label>').join(''):'<span class="rpt-dim" style="font-size:12px">Aucune session enregistrée.</span>';
+  $('rptGen').checked=!preMock;
+  $('rptPart').value=(typeof tsPart!=='undefined'&&PART_LBL[tsPart])?tsPart:'all';
+  $('rptMode').value=(typeof tsMode!=='undefined'&&MODE_LBL[tsMode])?tsMode:'all';
+  $('rptGo').disabled=!hist.length;
+  if(!hist.length) msg.textContent='Aucune session enregistrée : termine un mock pour pouvoir exporter.';
+  $('rptModal').classList.add('on');
+}
+function generate(){
+  const o={
+    general:$('rptGen').checked,
+    mocks:[...document.querySelectorAll('#rptModal .rptMk:checked')].map(c=>c.value),
+    part:$('rptPart').value, mode:$('rptMode').value, detail:$('rptDetail').value, expl:$('rptExpl').checked
+  };
+  if(!o.general&&!o.mocks.length){ $('rptMsg').textContent='Coche au moins le rapport général ou un mock.'; return; }
+  let html;
+  try{ html=buildReport(o); }catch(err){ console.error(err); $('rptMsg').textContent='Erreur pendant la génération : '+err.message; return; }
+  let root=$('rptRoot');
+  if(!root){ root=document.createElement('div'); root.id='rptRoot'; document.body.appendChild(root); }
+  root.innerHTML='<div class="rpt-bar"><button type="button" id="rptBack">← Retour</button><span>Aperçu A4 — dans la fenêtre d’impression, choisis « Enregistrer au format PDF », format A4</span><button type="button" class="p" id="rptPrint">📄 Enregistrer en PDF</button></div>'+html;
+  $('rptBack').onclick=closePreview; $('rptPrint').onclick=doPrint;
+  closeModal();
+  document.body.classList.add('rpt-on'); root.scrollTop=0;
+}
+function closePreview(){ document.body.classList.remove('rpt-on'); const r=$('rptRoot'); if(r) r.innerHTML=''; }
+function doPrint(){
+  const old=document.title, d=new Date();
+  document.title='Stats_CFA_L2_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const restore=()=>{ document.title=old; window.removeEventListener('afterprint',restore); };
+  window.addEventListener('afterprint',restore);
+  setTimeout(()=>window.print(),60);
+}
+document.addEventListener('keydown',ev=>{
+  if(ev.key!=='Escape') return;
+  if(document.body.classList.contains('rpt-on')) closePreview(); else closeModal();
+});
+
+/* ───────── Boutons (ajoutés par script, sans toucher au HTML existant) ───────── */
+function mkBtn(id,cls,getMock){
+  const b=document.createElement('button'); b.id=id; b.type='button'; b.className=cls+' rpt-trigger';
+  b.style.cssText='padding:8px 14px;font-size:12px'; b.textContent='📄 Exporter en PDF';
+  b.onclick=()=>openModal(getMock());
+  return b;
+}
+function injectButtons(){
+  if(typeof computeTopicStats!=='function'||typeof getHistory!=='function') return;
+  const sub=$('tsSub');
+  if(sub&&!$('rptBtnTopics')) sub.insertAdjacentElement('afterend',mkBtn('rptBtnTopics','btn btn-g',()=>(typeof tsMock!=='undefined'?tsMock:null)));
+  const hb=document.querySelector('#scr-history button[onclick="openTopicStats()"]');
+  if(hb&&!$('rptBtnHist')) hb.insertAdjacentElement('afterend',mkBtn('rptBtnHist','btn btn-o',()=>(typeof histFilterMock!=='undefined'?histFilterMock:null)));
+}
+injectButtons();
+window.rptOpenExport=openModal;   // utilisable aussi depuis la console : rptOpenExport()
+}catch(err){ console.warn('Module export PDF non chargé :',err); }
+})();
+</script>
+<!-- ═════════════ FIN DU MODULE EXPORT PDF ═════════════ -->
+
 </body>
 </html>
